@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ml">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>മദ്രസ മാനേജ്‌മെന്റ് സിസ്റ്റം</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* കർവുകൾ പൂർണ്ണമായും ഒഴിവാക്കാനുള്ള സ്റ്റൈൽ */
+    * { border-radius: 0px !important; }
+  </style>
+</head>
+<body class="bg-gray-100 flex min-h-screen font-sans">
+
+  <!-- സൈഡ്‌ബാർ -->
+  <aside id="sidebar" class="w-64 bg-slate-900 text-white flex flex-col fixed md:relative h-full min-h-screen z-50">
+    <div class="p-5 font-bold text-lg border-b border-slate-700 tracking-wide">
+      മദ്രസ പോർട്ടൽ
+    </div>
+    <nav class="flex-1 p-2 space-y-1">
+      <button class="w-full text-left px-4 py-3 bg-blue-700 text-white font-medium">ഡാഷ്‌ബോർഡ്</button>
+      <button class="w-full text-left px-4 py-3 text-slate-300 hover:bg-slate-800">ഹാജർ (Attendance)</button>
+      <button class="w-full text-left px-4 py-3 text-slate-300 hover:bg-slate-800">അധ്യാപകർ (Teachers)</button>
+      <button class="w-full text-left px-4 py-3 text-slate-300 hover:bg-slate-800">ഫീസ് മാനേജ്‌മെന്റ്</button>
+      <button class="w-full text-left px-4 py-3 text-slate-300 hover:bg-slate-800">ഭക്ഷണ വിതരണം (90 വീടുകൾ)</button>
+    </nav>
+  </aside>
+
+  <!-- പ്രധാന ഭാഗം (Main Content) -->
+  <div class="flex-1 flex flex-col">
+    <header class="bg-white border-b border-gray-300 px-6 py-4 flex justify-between items-center">
+      <h1 class="text-xl font-bold text-gray-800">ഡാഷ്‌ബോർഡ്</h1>
+      <span class="text-sm text-gray-500">ഇന്നത്തെ തീയതി</span>
+    </header>
+
+    <main class="p-6 space-y-6">
+      <!-- ചതുരാകൃതിയിലുള്ള സ്റ്റാറ്റസ് കാർഡുകൾ -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-white border border-gray-300 p-5 border-l-4 border-l-blue-600">
+          <p class="text-xs uppercase text-gray-500 font-semibold">ആകെ വിദ്യാർത്ഥികൾ</p>
+          <p class="text-2xl font-bold text-gray-800 mt-1">240</p>
+        </div>
+        <div class="bg-white border border-gray-300 p-5 border-l-4 border-l-green-600">
+          <p class="text-xs uppercase text-gray-500 font-semibold">ഇന്നത്തെ ഹാജർ</p>
+          <p class="text-2xl font-bold text-gray-800 mt-1">94%</p>
+        </div>
+        <div class="bg-white border border-gray-300 p-5 border-l-4 border-l-amber-600">
+          <p class="text-xs uppercase text-gray-500 font-semibold">ഫീസ് കുടിശ്ശിക</p>
+          <p class="text-2xl font-bold text-gray-800 mt-1">₹12,500</p>
+        </div>
+        <div class="bg-white border border-gray-300 p-5 border-l-4 border-l-purple-600">
+          <p class="text-xs uppercase text-gray-500 font-semibold">ഇന്നത്തെ ഭക്ഷണം</p>
+          <p class="text-sm font-semibold text-gray-800 mt-1">രാവിലെ: വീട് #12<br>ഉച്ച: വീട് #13<br>രാത്രി: വീട് #14</p>
+        </div>
+      </div>
+
+      <!-- ഭക്ഷണ വിതരണ റിമൈൻഡർ സെക്ഷൻ -->
+      <div class="bg-white border border-gray-300 p-6">
+        <div class="flex justify-between items-center border-b border-gray-200 pb-3 mb-4">
+          <h2 class="text-base font-bold text-gray-800">അടുത്ത ദിവസങ്ങളിലെ ഭക്ഷണ വിതരണ പട്ടിക & ഓട്ടോ-റിമൈൻഡർ</h2>
+          <button class="bg-blue-600 text-white px-4 py-2 text-sm font-medium hover:bg-blue-700">മെസ്സേജ് അയക്കുക (Manual Test)</button>
+        </div>
+        <table class="w-full text-left text-sm border-collapse">
+          <thead>
+            <tr class="bg-gray-100 border-b border-gray-300">
+              <th class="p-3">തീയതി</th>
+              <th class="p-3">സമയം</th>
+              <th class="p-3">വീട്ട് നമ്പർ / പേര്</th>
+              <th class="p-3">ഫോൺ നമ്പർ</th>
+              <th class="p-3">റിമൈൻഡർ സ്റ്റാറ്റസ്</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="border-b border-gray-200">
+              <td class="p-3">നാളെ</td>
+              <td class="p-3">രാവിലെ</td>
+              <td class="p-3 font-semibold">വീട് #15 (അബ്ദുല്ല)</td>
+              <td class="p-3">+91 98765 43210</td>
+              <td class="p-3"><span class="bg-green-100 text-green-800 px-2 py-1 text-xs">അയച്ചു (2 Days Before)</span></td>
+            </tr>
+            <tr class="border-b border-gray-200">
+              <td class="p-3">നാളെ</td>
+              <td class="p-3">ഉച്ചയ്ക്ക്</td>
+              <td class="p-3 font-semibold">വീട് #16 (യൂസുഫ്)</td>
+              <td class="p-3">+91 98765 43211</td>
+              <td class="p-3"><span class="bg-amber-100 text-amber-800 px-2 py-1 text-xs">ഇന്ന് വൈകിട്ട് ഷെഡ്യൂൾ ചെയ്തു</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+</body>
+</html>
