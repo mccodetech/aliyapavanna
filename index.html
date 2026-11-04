@@ -5,91 +5,229 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>മദ്രസ മാനേജ്‌മെന്റ് സിസ്റ്റം</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Supabase JS Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    /* കർവുകൾ പൂർണ്ണമായും ഒഴിവാക്കാനുള്ള സ്റ്റൈൽ */
+    /* കർവുകൾ പൂർണ്ണമായും ഒഴിവാക്കുന്നു */
     * { border-radius: 0px !important; }
   </style>
 </head>
-<body class="bg-gray-100 flex min-h-screen font-sans">
+<body class="bg-gray-100 flex min-h-screen font-sans text-gray-800">
+
+  <!-- മൊബൈൽ ബാക്ക്ഡ്രോപ്പ് -->
+  <div id="backdrop" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-40 hidden md:hidden"></div>
 
   <!-- സൈഡ്‌ബാർ -->
-  <aside id="sidebar" class="w-64 bg-slate-900 text-white flex flex-col fixed md:relative h-full min-h-screen z-50">
-    <div class="p-5 font-bold text-lg border-b border-slate-700 tracking-wide">
-      മദ്രസ പോർട്ടൽ
+  <aside id="sidebar" class="fixed top-0 bottom-0 left-0 w-64 bg-slate-950 text-white z-50 flex flex-col border-r border-slate-800 -translate-x-full md:translate-x-0 transition-transform duration-200">
+    <div class="p-5 border-b border-slate-800 flex justify-between items-center">
+      <span class="font-bold text-lg tracking-wider">മദ്രസ പോർട്ടൽ</span>
+      <button onclick="toggleSidebar()" class="md:hidden text-gray-400 font-bold text-xl">✕</button>
     </div>
-    <nav class="flex-1 p-2 space-y-1">
-      <button class="w-full text-left px-4 py-3 bg-blue-700 text-white font-medium">ഡാഷ്‌ബോർഡ്</button>
-      <button class="w-full text-left px-4 py-3 text-slate-300 hover:bg-slate-800">ഹാജർ (Attendance)</button>
-      <button class="w-full text-left px-4 py-3 text-slate-300 hover:bg-slate-800">അധ്യാപകർ (Teachers)</button>
-      <button class="w-full text-left px-4 py-3 text-slate-300 hover:bg-slate-800">ഫീസ് മാനേജ്‌മെന്റ്</button>
-      <button class="w-full text-left px-4 py-3 text-slate-300 hover:bg-slate-800">ഭക്ഷണ വിതരണം (90 വീടുകൾ)</button>
+    <nav class="p-3 space-y-1 flex-1">
+      <button onclick="switchTab('dashboard')" id="btn-dashboard" class="w-full text-left px-4 py-3 text-sm font-semibold border-l-4 border-blue-500 bg-slate-800 text-blue-400">ഡാഷ്‌ബോർഡ്</button>
+      <button onclick="switchTab('students')" id="btn-students" class="w-full text-left px-4 py-3 text-sm font-semibold border-l-4 border-transparent text-slate-300 hover:bg-slate-900">വിദ്യാർത്ഥികൾ & ഹാജർ</button>
+      <button onclick="switchTab('food')" id="btn-food" class="w-full text-left px-4 py-3 text-sm font-semibold border-l-4 border-transparent text-slate-300 hover:bg-slate-900">ഭക്ഷണ ഷെഡ്യൂൾ (90 വീട്)</button>
     </nav>
   </aside>
 
-  <!-- പ്രധാന ഭാഗം (Main Content) -->
-  <div class="flex-1 flex flex-col">
-    <header class="bg-white border-b border-gray-300 px-6 py-4 flex justify-between items-center">
-      <h1 class="text-xl font-bold text-gray-800">ഡാഷ്‌ബോർഡ്</h1>
-      <span class="text-sm text-gray-500">ഇന്നത്തെ തീയതി</span>
+  <!-- പ്രധാന ഭാഗം -->
+  <div class="flex-1 flex flex-col md:ml-64 w-full">
+    <header class="h-16 bg-white border-b border-gray-300 px-6 flex items-center justify-between">
+      <button onclick="toggleSidebar()" class="md:hidden p-2 text-gray-600 border border-gray-300">☰</button>
+      <h1 id="page-title" class="text-base md:text-lg font-bold uppercase tracking-wide">ഡാഷ്‌ബോർഡ്</h1>
+      <span class="text-xs bg-emerald-100 text-emerald-800 border border-emerald-300 px-2.5 py-1 font-semibold">Supabase കണക്റ്റഡ്</span>
     </header>
 
     <main class="p-6 space-y-6">
-      <!-- ചതുരാകൃതിയിലുള്ള സ്റ്റാറ്റസ് കാർഡുകൾ -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div class="bg-white border border-gray-300 p-5 border-l-4 border-l-blue-600">
-          <p class="text-xs uppercase text-gray-500 font-semibold">ആകെ വിദ്യാർത്ഥികൾ</p>
-          <p class="text-2xl font-bold text-gray-800 mt-1">240</p>
+      
+      <!-- 1. ഡാഷ്‌ബോർഡ് ടാബ് -->
+      <section id="tab-dashboard" class="space-y-6">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="bg-white border border-gray-300 border-l-4 border-l-blue-600 p-5">
+            <p class="text-xs uppercase font-bold text-gray-500">ആകെ വിദ്യാർത്ഥികൾ</p>
+            <p id="stat-students-count" class="text-3xl font-extrabold text-gray-900 mt-1">...</p>
+          </div>
+          <div class="bg-white border border-gray-300 border-l-4 border-l-green-600 p-5">
+            <p class="text-xs uppercase font-bold text-gray-500">ഭക്ഷണ വിതരണ വീടുകൾ</p>
+            <p class="text-3xl font-extrabold text-gray-900 mt-1">90</p>
+          </div>
+          <div class="bg-white border border-gray-300 border-l-4 border-l-amber-600 p-5">
+            <p class="text-xs uppercase font-bold text-gray-500">ഇന്നത്തെ ഭക്ഷണം</p>
+            <p class="text-sm font-bold text-gray-800 mt-2">രാവിലെ: #12 | ഉച്ച: #13 | രാത്രി: #14</p>
+          </div>
         </div>
-        <div class="bg-white border border-gray-300 p-5 border-l-4 border-l-green-600">
-          <p class="text-xs uppercase text-gray-500 font-semibold">ഇന്നത്തെ ഹാജർ</p>
-          <p class="text-2xl font-bold text-gray-800 mt-1">94%</p>
-        </div>
-        <div class="bg-white border border-gray-300 p-5 border-l-4 border-l-amber-600">
-          <p class="text-xs uppercase text-gray-500 font-semibold">ഫീസ് കുടിശ്ശിക</p>
-          <p class="text-2xl font-bold text-gray-800 mt-1">₹12,500</p>
-        </div>
-        <div class="bg-white border border-gray-300 p-5 border-l-4 border-l-purple-600">
-          <p class="text-xs uppercase text-gray-500 font-semibold">ഇന്നത്തെ ഭക്ഷണം</p>
-          <p class="text-sm font-semibold text-gray-800 mt-1">രാവിലെ: വീട് #12<br>ഉച്ച: വീട് #13<br>രാത്രി: വീട് #14</p>
-        </div>
-      </div>
+      </section>
 
-      <!-- ഭക്ഷണ വിതരണ റിമൈൻഡർ സെക്ഷൻ -->
-      <div class="bg-white border border-gray-300 p-6">
-        <div class="flex justify-between items-center border-b border-gray-200 pb-3 mb-4">
-          <h2 class="text-base font-bold text-gray-800">അടുത്ത ദിവസങ്ങളിലെ ഭക്ഷണ വിതരണ പട്ടിക & ഓട്ടോ-റിമൈൻഡർ</h2>
-          <button class="bg-blue-600 text-white px-4 py-2 text-sm font-medium hover:bg-blue-700">മെസ്സേജ് അയക്കുക (Manual Test)</button>
+      <!-- 2. വിദ്യാർത്ഥികൾ & ഹാജർ ടാബ് -->
+      <section id="tab-students" class="hidden space-y-6">
+        <!-- പുതിയ കുട്ടിയെ ചേർക്കാനുള്ള ഫോം -->
+        <div class="bg-white border border-gray-300 p-5">
+          <h2 class="text-sm font-bold uppercase mb-4 border-b pb-2">പുതിയ വിദ്യാർത്ഥിയെ ചേർക്കുക</h2>
+          <form id="add-student-form" onsubmit="addStudent(event)" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <input type="text" id="stu-name" placeholder="വിദ്യാർത്ഥിയുടെ പേര്" required class="border border-gray-300 p-2 text-sm outline-none focus:border-blue-500">
+            <input type="text" id="stu-class" placeholder="ക്ലാസ് / ഡിവിഷൻ" required class="border border-gray-300 p-2 text-sm outline-none focus:border-blue-500">
+            <input type="text" id="stu-phone" placeholder="രക്ഷിതാവിന്റെ ഫോൺ" required class="border border-gray-300 p-2 text-sm outline-none focus:border-blue-500">
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 text-sm">ഡാറ്റാബേസിലേക്ക് ചേർക്കുക</button>
+          </form>
         </div>
-        <table class="w-full text-left text-sm border-collapse">
-          <thead>
-            <tr class="bg-gray-100 border-b border-gray-300">
-              <th class="p-3">തീയതി</th>
-              <th class="p-3">സമയം</th>
-              <th class="p-3">വീട്ട് നമ്പർ / പേര്</th>
-              <th class="p-3">ഫോൺ നമ്പർ</th>
-              <th class="p-3">റിമൈൻഡർ സ്റ്റാറ്റസ്</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr class="border-b border-gray-200">
-              <td class="p-3">നാളെ</td>
-              <td class="p-3">രാവിലെ</td>
-              <td class="p-3 font-semibold">വീട് #15 (അബ്ദുല്ല)</td>
-              <td class="p-3">+91 98765 43210</td>
-              <td class="p-3"><span class="bg-green-100 text-green-800 px-2 py-1 text-xs">അയച്ചു (2 Days Before)</span></td>
-            </tr>
-            <tr class="border-b border-gray-200">
-              <td class="p-3">നാളെ</td>
-              <td class="p-3">ഉച്ചയ്ക്ക്</td>
-              <td class="p-3 font-semibold">വീട് #16 (യൂസുഫ്)</td>
-              <td class="p-3">+91 98765 43211</td>
-              <td class="p-3"><span class="bg-amber-100 text-amber-800 px-2 py-1 text-xs">ഇന്ന് വൈകിട്ട് ഷെഡ്യൂൾ ചെയ്തു</span></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+
+        <!-- വിദ്യാർത്ഥികളുടെ പട്ടിക -->
+        <div class="bg-white border border-gray-300">
+          <div class="p-4 border-b border-gray-300 font-bold text-sm uppercase bg-gray-50">വിദ്യാർത്ഥികളുടെ ലിസ്റ്റ്</div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+              <thead class="bg-gray-100 border-b border-gray-300 uppercase text-xs">
+                <tr>
+                  <th class="p-3 border-r">ഐഡി</th>
+                  <th class="p-3 border-r">പേര്</th>
+                  <th class="p-3 border-r">ക്ലാസ്</th>
+                  <th class="p-3 border-r">ഫോൺ നമ്പർ</th>
+                </tr>
+              </thead>
+              <tbody id="students-table-body">
+                <tr><td colspan="4" class="p-4 text-center text-gray-500">ഡാറ്റ ലോഡ് ചെയ്യുന്നു...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. ഭക്ഷണ ഷെഡ്യൂൾ ടാബ് -->
+      <section id="tab-food" class="hidden space-y-6">
+        <div class="bg-white border border-gray-300">
+          <div class="p-4 border-b border-gray-300 flex justify-between items-center bg-gray-50">
+            <span class="font-bold text-sm uppercase">ഭക്ഷണ വിതരണ പട്ടിക & ഓട്ടോ-റിമൈൻഡർ (90 വീടുകൾ)</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+              <thead class="bg-gray-100 border-b border-gray-300 uppercase text-xs">
+                <tr>
+                  <th class="p-3 border-r">വീട്ടുനമ്പർ</th>
+                  <th class="p-3 border-r">കുടുംബനാഥൻ</th>
+                  <th class="p-3 border-r">സമയം</th>
+                  <th class="p-3 border-r">ഫോൺ</th>
+                  <th class="p-3 border-r">തീയതി</th>
+                  <th class="p-3 text-center">റിമൈൻഡർ സന്ദേശം</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="border-b border-gray-200">
+                  <td class="p-3 border-r font-mono font-bold">#15</td>
+                  <td class="p-3 border-r">അബ്ദുല്ല കുട്ടി</td>
+                  <td class="p-3 border-r"><span class="px-2 py-0.5 bg-gray-200 text-xs font-semibold">രാവിലെ</span></td>
+                  <td class="p-3 border-r font-mono">+91 9876543210</td>
+                  <td class="p-3 border-r font-mono text-xs">നാളെ</td>
+                  <td class="p-3 text-center">
+                    <button onclick="sendReminder('9876543210', 'അബ്ദുല്ല കുട്ടി', 'രാവിലെ')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 text-xs font-bold">WhatsApp അയക്കുക</button>
+                  </td>
+                </tr>
+                <tr class="border-b border-gray-200">
+                  <td class="p-3 border-r font-mono font-bold">#16</td>
+                  <td class="p-3 border-r">യൂസുഫ് ഹാജി</td>
+                  <td class="p-3 border-r"><span class="px-2 py-0.5 bg-gray-200 text-xs font-semibold">ഉച്ചയ്ക്ക്</span></td>
+                  <td class="p-3 border-r font-mono">+91 9876543211</td>
+                  <td class="p-3 border-r font-mono text-xs">നാളെ</td>
+                  <td class="p-3 text-center">
+                    <button onclick="sendReminder('9876543211', 'യൂസുഫ് ഹാജി', 'ഉച്ചയ്ക്ക്')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 text-xs font-bold">WhatsApp അയക്കുക</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
     </main>
   </div>
 
+  <script>
+    // Supabase കണക്റ്റിവിറ്റി (നിങ്ങൾ നൽകിയ വിവരങ്ങൾ)
+    const SUPABASE_URL = "https://oinefbbqlilmnyrytimf.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_mKndkGCbbe7EOrMYgCUSCw_Wg_G_y9D";
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // സൈഡ്‌ബാർ ടോഗിൾ (Mobile)
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const backdrop = document.getElementById('backdrop');
+      sidebar.classList.toggle('-translate-x-full');
+      backdrop.classList.toggle('hidden');
+    }
+
+    // ടാബുകൾ മാറൽ
+    function switchTab(tabId) {
+      ['dashboard', 'students', 'food'].forEach(t => {
+        document.getElementById(`tab-${t}`).classList.add('hidden');
+        const btn = document.getElementById(`btn-${t}`);
+        btn.classList.remove('border-blue-500', 'bg-slate-800', 'text-blue-400');
+        btn.classList.add('border-transparent', 'text-slate-300');
+      });
+
+      document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+      const activeBtn = document.getElementById(`btn-${tabId}`);
+      activeBtn.classList.remove('border-transparent', 'text-slate-300');
+      activeBtn.classList.add('border-blue-500', 'bg-slate-800', 'text-blue-400');
+
+      if (window.innerWidth < 768) toggleSidebar();
+      if (tabId === 'students' || tabId === 'dashboard') loadStudents();
+    }
+
+    // Supabase-ൽ നിന്ന് വിദ്യാർത്ഥികളെ ലോഡ് ചെയ്യുക
+    async function loadStudents() {
+      const { data, error } = await supabase.from('students').select('*').order('id', { ascending: false });
+      if (error) {
+        console.error("Error fetching students:", error);
+        return;
+      }
+      document.getElementById('stat-students-count').innerText = data.length;
+      const tbody = document.getElementById('students-table-body');
+      tbody.innerHTML = '';
+
+      if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-500">വിദ്യാർത്ഥികളെ ചേർത്തിട്ടില്ല</td></tr>';
+        return;
+      }
+
+      data.forEach(s => {
+        tbody.innerHTML += `
+          <tr class="border-b border-gray-200">
+            <td class="p-3 border-r font-mono font-bold">#${s.id}</td>
+            <td class="p-3 border-r font-medium">${s.name}</td>
+            <td class="p-3 border-r">${s.class}</td>
+            <td class="p-3 border-r font-mono">${s.phone || '-'}</td>
+          </tr>
+        `;
+      });
+    }
+
+    // പുതിയ കുട്ടിയെ Supabase-ലേക്ക് ചേർക്കുക
+    async function addStudent(e) {
+      e.preventDefault();
+      const name = document.getElementById('stu-name').value;
+      const stuClass = document.getElementById('stu-class').value;
+      const phone = document.getElementById('stu-phone').value;
+
+      const { data, error } = await supabase.from('students').insert([
+        { name: name, class: stuClass, phone: phone }
+      ]);
+
+      if (error) {
+        alert("ഡാറ്റ ചേർക്കുന്നതിൽ പിശക് സംഭവിച്ചു: " + error.message);
+      } else {
+        alert("വിദ്യാർത്ഥിയെ വിജയകരമായി ചേർത്തു!");
+        document.getElementById('add-student-form').reset();
+        loadStudents();
+      }
+    }
+
+    // WhatsApp റിമൈൻഡർ
+    function sendReminder(phone, name, slot) {
+      const text = encodeURIComponent(`അസ്സലാമു അലൈക്കും ${name}, നാളെ മദ്രസയിലേക്ക് [${slot}] ഭക്ഷണം എത്തിക്കേണ്ട ദിവസമാണ്. കൃത്യസമയത്ത് എത്തിക്കാൻ ഓർമ്മിപ്പിക്കുന്നു.`);
+      window.open(`https://wa.me/91${phone}?text=${text}`, '_blank');
+    }
+
+    // പേജ് തുറക്കുമ്പോൾ ഡാറ്റ ലോഡ് ചെയ്യുക
+    loadStudents();
+  </script>
 </body>
 </html>
