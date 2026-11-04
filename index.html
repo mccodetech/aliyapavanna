@@ -57,7 +57,7 @@
           </div>
           <div class="bg-white border border-gray-300 border-l-4 border-l-amber-600 p-5">
             <p class="text-xs uppercase font-bold text-gray-500">ഇന്നത്തെ ഭക്ഷണം</p>
-            <p id="today-food-summary" class="text-sm font-bold text-gray-800 mt-2">രാവിലെ: - | ഉച്ച: - | രാത്രി: -</p>
+            <p class="text-sm font-bold text-gray-800 mt-2">രാവിലെ: #12 | ഉച്ച: #13 | രാത്രി: #14</p>
           </div>
         </div>
       </section>
@@ -86,7 +86,9 @@
                   <th class="p-3 text-center">ഹാജർ (ഇന്ന്)</th>
                 </tr>
               </thead>
-              <tbody id="students-table-body"></tbody>
+              <tbody id="students-table-body">
+                <tr><td colspan="4" class="p-4 text-center text-gray-500">ഡാറ്റ ലോഡ് ചെയ്യുന്നു...</td></tr>
+              </tbody>
             </table>
           </div>
         </div>
@@ -113,7 +115,9 @@
                 <th class="p-3 border-r">ഫോൺ നമ്പർ</th>
               </tr>
             </thead>
-            <tbody id="teachers-table-body"></tbody>
+            <tbody id="teachers-table-body">
+              <tr><td colspan="3" class="p-4 text-center text-gray-500">ഡാറ്റ ലോഡ് ചെയ്യുന്നു...</td></tr>
+            </tbody>
           </table>
         </div>
       </section>
@@ -123,7 +127,9 @@
         <div class="bg-white border border-gray-300 p-5">
           <h2 class="text-sm font-bold uppercase mb-4 border-b pb-2">ഫീസ് രേഖപ്പെടുത്തുക</h2>
           <form onsubmit="addFeePayment(event)" class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <select id="fee-student-select" required class="border border-gray-300 p-2 text-sm outline-none"></select>
+            <select id="fee-student-select" required class="border border-gray-300 p-2 text-sm outline-none">
+              <option value="">വിദ്യാർത്ഥിയെ തിരഞ്ഞെടുക്കുക</option>
+            </select>
             <input type="text" id="fee-month" placeholder="മാസം (ഉദാ: നവംബർ)" required class="border border-gray-300 p-2 text-sm outline-none">
             <input type="number" id="fee-amount" placeholder="തുക (₹)" required class="border border-gray-300 p-2 text-sm outline-none">
             <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 text-sm">ഫീസ് അടവ് രേഖപ്പെടുത്തുക</button>
@@ -140,7 +146,9 @@
                 <th class="p-3 text-center">രസീത് അയക്കുക</th>
               </tr>
             </thead>
-            <tbody id="fees-table-body"></tbody>
+            <tbody id="fees-table-body">
+              <tr><td colspan="4" class="p-4 text-center text-gray-500">ഡാറ്റ ലോഡ് ചെയ്യുന്നു...</td></tr>
+            </tbody>
           </table>
         </div>
       </section>
@@ -174,7 +182,9 @@
                 <th class="p-3 text-center">റിമൈൻഡർ</th>
               </tr>
             </thead>
-            <tbody id="food-table-body"></tbody>
+            <tbody id="food-table-body">
+              <tr><td colspan="5" class="p-4 text-center text-gray-500">ഡാറ്റ ലോഡ് ചെയ്യുന്നു...</td></tr>
+            </tbody>
           </table>
         </div>
       </section>
@@ -183,11 +193,12 @@
   </div>
 
   <script>
-    const SUPABASE_URL = "https://oinefbbqlilmnyrytimf.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_mKndkGCbbe7EOrMYgCUSCw_Wg_G_y9D";
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // ഒരു തവണ മാത്രം Supabase Client ഡിക്ലെയർ ചെയ്യുന്നു
+    const SUPABASE_PROJECT_URL = "https://oinefbbqlilmnyrytimf.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_mKndkGCbbe7EOrMYgCUSCw_Wg_G_y9D";
+    const db = window.supabase.createClient(SUPABASE_PROJECT_URL, SUPABASE_ANON_KEY);
 
-    let allStudents = [];
+    let cachedStudents = [];
 
     function toggleSidebar() {
       document.getElementById('sidebar').classList.toggle('-translate-x-full');
@@ -198,38 +209,68 @@
       ['dashboard', 'students', 'teachers', 'fees', 'food'].forEach(t => {
         document.getElementById(`tab-${t}`).classList.add('hidden');
         const btn = document.getElementById(`btn-${t}`);
-        btn.classList.remove('border-blue-500', 'bg-slate-800', 'text-blue-400');
-        btn.classList.add('border-transparent', 'text-slate-300');
+        if(btn) {
+          btn.classList.remove('border-blue-500', 'bg-slate-800', 'text-blue-400');
+          btn.classList.add('border-transparent', 'text-slate-300');
+        }
       });
 
       document.getElementById(`tab-${tabId}`).classList.remove('hidden');
       const activeBtn = document.getElementById(`btn-${tabId}`);
-      activeBtn.classList.remove('border-transparent', 'text-slate-300');
-      activeBtn.classList.add('border-blue-500', 'bg-slate-800', 'text-blue-400');
+      if(activeBtn) {
+        activeBtn.classList.remove('border-transparent', 'text-slate-300');
+        activeBtn.classList.add('border-blue-500', 'bg-slate-800', 'text-blue-400');
+      }
 
-      if (window.innerWidth < 768) toggleSidebar();
-      loadAllData();
+      const titles = {
+        dashboard: "ഡാഷ്‌ബോർഡ്",
+        students: "വിദ്യാർത്ഥികൾ & ഹാജർ",
+        teachers: "അധ്യാപകർ (Teachers)",
+        fees: "ഫീസ് മാനേജ്‌മെന്റ്",
+        food: "ഭക്ഷണ ഷെഡ്യൂൾ (90 വീട്)"
+      };
+      document.getElementById('page-title').innerText = titles[tabId];
+
+      if (window.innerWidth < 768) {
+        const sidebar = document.getElementById('sidebar');
+        if (!sidebar.classList.contains('-translate-x-full')) toggleSidebar();
+      }
+
+      loadDataForTab(tabId);
     }
 
-    async function loadAllData() {
-      loadStudents();
-      loadTeachers();
-      loadFees();
-      loadFoodSchedule();
+    function loadDataForTab(tabId) {
+      if (tabId === 'dashboard') loadDashboardCounts();
+      if (tabId === 'students') loadStudents();
+      if (tabId === 'teachers') loadTeachers();
+      if (tabId === 'fees') { loadStudents(); loadFees(); }
+      if (tabId === 'food') loadFoodSchedule();
     }
 
-    // വിദ്യാർത്ഥികൾ
+    async function loadDashboardCounts() {
+      const { data: s } = await db.from('students').select('id');
+      const { data: t } = await db.from('teachers').select('id');
+      document.getElementById('stat-students-count').innerText = s ? s.length : 0;
+      document.getElementById('stat-teachers-count').innerText = t ? t.length : 0;
+    }
+
     async function loadStudents() {
-      const { data } = await supabase.from('students').select('*').order('id', { ascending: false });
-      allStudents = data || [];
-      document.getElementById('stat-students-count').innerText = allStudents.length;
+      const { data, error } = await db.from('students').select('*').order('id', { ascending: false });
+      if (error) return;
+      cachedStudents = data || [];
+      document.getElementById('stat-students-count').innerText = cachedStudents.length;
 
       const tbody = document.getElementById('students-table-body');
       const feeSelect = document.getElementById('fee-student-select');
       tbody.innerHTML = '';
       feeSelect.innerHTML = '<option value="">വിദ്യാർത്ഥിയെ തിരഞ്ഞെടുക്കുക</option>';
 
-      allStudents.forEach(s => {
+      if (cachedStudents.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-500">വിദ്യാർത്ഥികളെ ചേർത്തിട്ടില്ല</td></tr>';
+        return;
+      }
+
+      cachedStudents.forEach(s => {
         tbody.innerHTML += `
           <tr class="border-b border-gray-200">
             <td class="p-3 border-r font-mono font-bold">#${s.id}</td>
@@ -247,29 +288,39 @@
 
     async function addStudent(e) {
       e.preventDefault();
-      await supabase.from('students').insert([{
-        name: document.getElementById('stu-name').value,
-        class: document.getElementById('stu-class').value,
-        phone: document.getElementById('stu-phone').value
-      }]);
-      alert("വിദ്യാർത്ഥിയെ വിജയകരമായി ചേർത്തു!");
-      e.target.reset();
-      loadStudents();
+      const name = document.getElementById('stu-name').value;
+      const stuClass = document.getElementById('stu-class').value;
+      const phone = document.getElementById('stu-phone').value;
+
+      const { error } = await db.from('students').insert([{ name, class: stuClass, phone }]);
+      if (error) {
+        alert("പിശക്: " + error.message);
+      } else {
+        alert("വിദ്യാർത്ഥിയെ ചേർത്തു!");
+        e.target.reset();
+        loadStudents();
+      }
     }
 
     async function markAttendance(studentId, status) {
       const today = new Date().toISOString().split('T')[0];
-      await supabase.from('attendance').insert([{ student_id: studentId, date: today, status: status }]);
-      alert(`ഹാജർ രേഖപ്പെടുത്തി: ${status === 'present' ? 'ഹാജർ' : 'ലീവ്'}`);
+      const { error } = await db.from('attendance').insert([{ student_id: studentId, date: today, status }]);
+      if (error) alert("ഹാജർ രേഖപ്പെടുത്താനായില്ല: " + error.message);
+      else alert(`ഹാജർ രേഖപ്പെടുത്തി: ${status === 'present' ? 'ഹാജർ' : 'ലീവ്'}`);
     }
 
-    // അധ്യാപകർ
     async function loadTeachers() {
-      const { data } = await supabase.from('teachers').select('*').order('id', { ascending: false });
+      const { data } = await db.from('teachers').select('*').order('id', { ascending: false });
       const teachers = data || [];
       document.getElementById('stat-teachers-count').innerText = teachers.length;
       const tbody = document.getElementById('teachers-table-body');
       tbody.innerHTML = '';
+
+      if (teachers.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-gray-500">അധ്യാപകരെ ചേർത്തിട്ടില്ല</td></tr>';
+        return;
+      }
+
       teachers.forEach(t => {
         tbody.innerHTML += `
           <tr class="border-b border-gray-200">
@@ -283,22 +334,31 @@
 
     async function addTeacher(e) {
       e.preventDefault();
-      await supabase.from('teachers').insert([{
+      const { error } = await db.from('teachers').insert([{
         name: document.getElementById('tea-name').value,
         designation: document.getElementById('tea-desig').value,
         phone: document.getElementById('tea-phone').value
       }]);
-      alert("അധ്യാപകനെ ചേർത്തു!");
-      e.target.reset();
-      loadTeachers();
+      if (error) alert("പിശക്: " + error.message);
+      else {
+        alert("അധ്യാപകനെ ചേർത്തു!");
+        e.target.reset();
+        loadTeachers();
+      }
     }
 
-    // ഫീസ്
     async function loadFees() {
-      const { data } = await supabase.from('fee_payments').select('*, students(name, phone)').order('id', { ascending: false });
+      const { data } = await db.from('fee_payments').select('*, students(name, phone)').order('id', { ascending: false });
       const tbody = document.getElementById('fees-table-body');
       tbody.innerHTML = '';
-      (data || []).forEach(f => {
+      const fees = data || [];
+
+      if (fees.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-500">ഫീസ് വിവരങ്ങൾ ഇല്ല</td></tr>';
+        return;
+      }
+
+      fees.forEach(f => {
         const studentName = f.students ? f.students.name : 'Unknown';
         const phone = f.students ? f.students.phone : '';
         tbody.innerHTML += `
@@ -316,16 +376,19 @@
 
     async function addFeePayment(e) {
       e.preventDefault();
-      await supabase.from('fee_payments').insert([{
+      const { error } = await db.from('fee_payments').insert([{
         student_id: document.getElementById('fee-student-select').value,
         month: document.getElementById('fee-month').value,
         amount: document.getElementById('fee-amount').value,
         status: 'paid',
         payment_date: new Date().toISOString().split('T')[0]
       }]);
-      alert("ഫീസ് അടവ് രേഖപ്പെടുത്തി!");
-      e.target.reset();
-      loadFees();
+      if (error) alert("പിശക്: " + error.message);
+      else {
+        alert("ഫീസ് അടവ് രേഖപ്പെടുത്തി!");
+        e.target.reset();
+        loadFees();
+      }
     }
 
     function sendFeeReceipt(phone, name, month, amount) {
@@ -333,12 +396,18 @@
       window.open(`https://wa.me/91${phone}?text=${msg}`, '_blank');
     }
 
-    // ഭക്ഷണ വിതരണം
     async function loadFoodSchedule() {
-      const { data } = await supabase.from('food_routine').select('*').order('house_no', { ascending: true });
+      const { data } = await db.from('food_routine').select('*').order('house_no', { ascending: true });
       const tbody = document.getElementById('food-table-body');
       tbody.innerHTML = '';
-      (data || []).forEach(h => {
+      const food = data || [];
+
+      if (food.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500">വീടുകൾ ചേർത്തിട്ടില്ല</td></tr>';
+        return;
+      }
+
+      food.forEach(h => {
         const slotText = h.meal_slot === 'morning' ? 'രാവിലെ' : h.meal_slot === 'noon' ? 'ഉച്ചയ്ക്ക്' : 'രാത്രി';
         tbody.innerHTML += `
           <tr class="border-b border-gray-200">
@@ -356,16 +425,19 @@
 
     async function addFoodHouse(e) {
       e.preventDefault();
-      await supabase.from('food_routine').insert([{
+      const { error } = await db.from('food_routine').insert([{
         house_no: document.getElementById('food-house-no').value,
         family_name: document.getElementById('food-family-name').value,
         phone: document.getElementById('food-phone').value,
         meal_slot: document.getElementById('food-slot').value,
         allocated_date: new Date().toISOString().split('T')[0]
       }]);
-      alert("വീട് ഭക്ഷണ ഷെഡ്യൂളിലേക്ക് ചേർത്തു!");
-      e.target.reset();
-      loadFoodSchedule();
+      if (error) alert("പിശക്: " + error.message);
+      else {
+        alert("വീട് ചേർത്തു!");
+        e.target.reset();
+        loadFoodSchedule();
+      }
     }
 
     function sendFoodReminder(phone, name, slot) {
@@ -373,7 +445,8 @@
       window.open(`https://wa.me/91${phone}?text=${msg}`, '_blank');
     }
 
-    loadAllData();
+    // പ്രാരംഭ ഡാറ്റ ലോഡിംഗ്
+    loadDashboardCounts();
   </script>
 </body>
 </html>
