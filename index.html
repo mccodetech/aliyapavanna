@@ -2,98 +2,105 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Madrasa Management System</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     * { border-radius: 0px !important; }
+    /* മൊബൈൽ ടേബിളുകൾക്ക് സുഗമമായ സ്ക്രോളിംഗ് */
+    .table-scroll {
+      -webkit-overflow-scrolling: touch;
+    }
   </style>
 </head>
-<body class="bg-gray-100 flex min-h-screen font-sans text-gray-800">
+<body class="bg-gray-100 flex min-h-screen font-sans text-gray-800 antialiased">
 
   <!-- മൊബൈൽ ബാക്ക്ഡ്രോപ്പ് -->
-  <div id="backdrop" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-40 hidden md:hidden"></div>
+  <div id="backdrop" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 z-40 hidden md:hidden"></div>
 
   <!-- സൈഡ്‌ബാർ -->
   <aside id="sidebar" class="fixed top-0 bottom-0 left-0 w-64 bg-slate-950 text-white z-50 flex flex-col border-r border-slate-800 -translate-x-full md:translate-x-0 transition-transform duration-200">
-    <div class="p-5 border-b border-slate-800 flex justify-between items-center">
-      <span id="txt-app-title" class="font-bold text-lg tracking-wider">MADRASA PORTAL</span>
-      <button onclick="toggleSidebar()" class="md:hidden text-gray-400 font-bold text-xl">✕</button>
+    <div class="p-4 border-b border-slate-800 flex justify-between items-center">
+      <span id="txt-app-title" class="font-bold text-base tracking-wider text-slate-100">MADRASA PORTAL</span>
+      <button onclick="toggleSidebar()" class="md:hidden text-gray-400 hover:text-white p-1 text-lg">✕</button>
     </div>
-    <nav class="p-3 space-y-1 flex-1">
-      <button onclick="switchTab('dashboard')" id="btn-dashboard" class="w-full text-left px-4 py-3 text-sm font-semibold border-l-4 border-blue-500 bg-slate-800 text-blue-400">Dashboard</button>
-      <button onclick="switchTab('students')" id="btn-students" class="w-full text-left px-4 py-3 text-sm font-semibold border-l-4 border-transparent text-slate-300 hover:bg-slate-900">Students & Attendance</button>
-      <button onclick="switchTab('teachers')" id="btn-teachers" class="w-full text-left px-4 py-3 text-sm font-semibold border-l-4 border-transparent text-slate-300 hover:bg-slate-900">Teachers</button>
-      <button onclick="switchTab('fees')" id="btn-fees" class="w-full text-left px-4 py-3 text-sm font-semibold border-l-4 border-transparent text-slate-300 hover:bg-slate-900">Fee Management</button>
-      <button onclick="switchTab('food')" id="btn-food" class="w-full text-left px-4 py-3 text-sm font-semibold border-l-4 border-transparent text-slate-300 hover:bg-slate-900">Food Schedule (90 Houses)</button>
+    <nav class="p-2 space-y-1 flex-1 overflow-y-auto">
+      <button onclick="switchTab('dashboard')" id="btn-dashboard" class="w-full text-left px-3 py-3 text-sm font-semibold border-l-4 border-blue-500 bg-slate-800 text-blue-400">Dashboard</button>
+      <button onclick="switchTab('students')" id="btn-students" class="w-full text-left px-3 py-3 text-sm font-semibold border-l-4 border-transparent text-slate-300 hover:bg-slate-900">Students & Attendance</button>
+      <button onclick="switchTab('teachers')" id="btn-teachers" class="w-full text-left px-3 py-3 text-sm font-semibold border-l-4 border-transparent text-slate-300 hover:bg-slate-900">Teachers</button>
+      <button onclick="switchTab('fees')" id="btn-fees" class="w-full text-left px-3 py-3 text-sm font-semibold border-l-4 border-transparent text-slate-300 hover:bg-slate-900">Fee Management</button>
+      <button onclick="switchTab('food')" id="btn-food" class="w-full text-left px-3 py-3 text-sm font-semibold border-l-4 border-transparent text-slate-300 hover:bg-slate-900">Food Schedule (90 Houses)</button>
     </nav>
   </aside>
 
-  <!-- പ്രധാന ഭാഗം -->
-  <div class="flex-1 flex flex-col md:ml-64 w-full">
-    <header class="h-16 bg-white border-b border-gray-300 px-6 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <button onclick="toggleSidebar()" class="md:hidden p-2 text-gray-600 border border-gray-300">☰</button>
-        <h1 id="page-title" class="text-base md:text-lg font-bold uppercase tracking-wide">Dashboard</h1>
+  <!-- പ്രധാന കണ്ടന്റ് ഭാഗം -->
+  <div class="flex-1 flex flex-col md:ml-64 w-full min-w-0">
+    
+    <!-- മൊബൈൽ ഫ്രണ്ട്‌ലി ഹെഡർ -->
+    <header class="bg-white border-b border-gray-300 px-3 py-3 sm:px-6 flex items-center justify-between gap-2 sticky top-0 z-30">
+      <div class="flex items-center gap-2 min-w-0">
+        <button onclick="toggleSidebar()" class="md:hidden p-2 text-gray-700 border border-gray-300 hover:bg-gray-50 flex-shrink-0" aria-label="Menu">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+        </button>
+        <h1 id="page-title" class="text-xs sm:text-base font-bold uppercase tracking-tight text-gray-900 truncate">Dashboard</h1>
       </div>
       
-      <!-- ഭാഷ മാറ്റാനുള്ള സെക്ഷൻ & Supabase സ്റ്റാറ്റസ് -->
-      <div class="flex items-center gap-3">
-        <div class="border border-gray-300 bg-gray-50 flex text-xs font-bold">
-          <button id="lang-btn-en" onclick="setLanguage('en')" class="px-2.5 py-1 bg-slate-900 text-white">EN</button>
-          <button id="lang-btn-ml" onclick="setLanguage('ml')" class="px-2.5 py-1 text-gray-700 hover:bg-gray-200">മലയാളം</button>
+      <div class="flex items-center gap-2 flex-shrink-0">
+        <div class="border border-gray-300 bg-gray-50 flex text-[11px] font-bold">
+          <button id="lang-btn-en" onclick="setLanguage('en')" class="px-2 py-1 bg-slate-900 text-white">EN</button>
+          <button id="lang-btn-ml" onclick="setLanguage('ml')" class="px-2 py-1 text-gray-700 hover:bg-gray-200">മലയാളം</button>
         </div>
-        <span class="text-xs bg-emerald-100 text-emerald-800 border border-emerald-300 px-2.5 py-1 font-semibold hidden sm:inline-block">Supabase Connected</span>
       </div>
     </header>
 
-    <main class="p-6 space-y-6">
+    <!-- മെയിൻ പേജ് സ്ക്രോൾ ഏരിയ -->
+    <main class="p-3 sm:p-6 space-y-4 sm:space-y-6 overflow-x-hidden">
       
       <!-- 1. ഡാഷ്‌ബോർഡ് -->
-      <section id="tab-dashboard" class="space-y-6">
-        <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
-          <div class="bg-white border border-gray-300 border-l-4 border-l-blue-600 p-5">
-            <p id="lbl-total-students" class="text-xs uppercase font-bold text-gray-500">Total Students</p>
-            <p id="stat-students-count" class="text-3xl font-extrabold text-gray-900 mt-1">0</p>
+      <section id="tab-dashboard" class="space-y-4">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div class="bg-white border border-gray-300 border-l-4 border-l-blue-600 p-3 sm:p-5">
+            <p id="lbl-total-students" class="text-[10px] sm:text-xs uppercase font-bold text-gray-500">Total Students</p>
+            <p id="stat-students-count" class="text-xl sm:text-3xl font-extrabold text-gray-900 mt-1">0</p>
           </div>
-          <div class="bg-white border border-gray-300 border-l-4 border-l-purple-600 p-5">
-            <p id="lbl-total-teachers" class="text-xs uppercase font-bold text-gray-500">Total Teachers</p>
-            <p id="stat-teachers-count" class="text-3xl font-extrabold text-gray-900 mt-1">0</p>
+          <div class="bg-white border border-gray-300 border-l-4 border-l-purple-600 p-3 sm:p-5">
+            <p id="lbl-total-teachers" class="text-[10px] sm:text-xs uppercase font-bold text-gray-500">Total Teachers</p>
+            <p id="stat-teachers-count" class="text-xl sm:text-3xl font-extrabold text-gray-900 mt-1">0</p>
           </div>
-          <div class="bg-white border border-gray-300 border-l-4 border-l-green-600 p-5">
-            <p id="lbl-food-houses" class="text-xs uppercase font-bold text-gray-500">Food Routine Houses</p>
-            <p class="text-3xl font-extrabold text-gray-900 mt-1">90</p>
+          <div class="bg-white border border-gray-300 border-l-4 border-l-green-600 p-3 sm:p-5">
+            <p id="lbl-food-houses" class="text-[10px] sm:text-xs uppercase font-bold text-gray-500">Routine Houses</p>
+            <p class="text-xl sm:text-3xl font-extrabold text-gray-900 mt-1">90</p>
           </div>
-          <div class="bg-white border border-gray-300 border-l-4 border-l-amber-600 p-5">
-            <p id="lbl-today-food" class="text-xs uppercase font-bold text-gray-500">Today's Food</p>
-            <p id="today-food-summary" class="text-sm font-bold text-gray-800 mt-2">Morning: - | Noon: - | Night: -</p>
+          <div class="bg-white border border-gray-300 border-l-4 border-l-amber-600 p-3 sm:p-5 col-span-2 sm:col-span-1">
+            <p id="lbl-today-food" class="text-[10px] sm:text-xs uppercase font-bold text-gray-500">Today's Food</p>
+            <p id="today-food-summary" class="text-xs sm:text-sm font-bold text-gray-800 mt-1">Morning: - | Noon: - | Night: -</p>
           </div>
         </div>
       </section>
 
       <!-- 2. വിദ്യാർത്ഥികൾ & ഹാജർ -->
-      <section id="tab-students" class="hidden space-y-6">
-        <div class="bg-white border border-gray-300 p-5">
-          <h2 id="lbl-add-student-title" class="text-sm font-bold uppercase mb-4 border-b pb-2">Add New Student</h2>
-          <form onsubmit="addStudent(event)" class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <input type="text" id="stu-name" placeholder="Student Name" required class="border border-gray-300 p-2 text-sm outline-none focus:border-blue-500">
-            <input type="text" id="stu-class" placeholder="Class / Division" required class="border border-gray-300 p-2 text-sm outline-none focus:border-blue-500">
-            <input type="text" id="stu-phone" placeholder="Parent Phone Number" required class="border border-gray-300 p-2 text-sm outline-none focus:border-blue-500">
-            <button type="submit" id="btn-submit-student" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 text-sm">Add Student</button>
+      <section id="tab-students" class="hidden space-y-4">
+        <div class="bg-white border border-gray-300 p-4">
+          <h2 id="lbl-add-student-title" class="text-xs sm:text-sm font-bold uppercase mb-3 border-b pb-2">Add New Student</h2>
+          <form onsubmit="addStudent(event)" class="flex flex-col gap-2 sm:grid sm:grid-cols-4">
+            <input type="text" id="stu-name" placeholder="Student Name" required class="w-full border border-gray-300 p-2.5 text-xs sm:text-sm outline-none focus:border-blue-600">
+            <input type="text" id="stu-class" placeholder="Class / Division" required class="w-full border border-gray-300 p-2.5 text-xs sm:text-sm outline-none focus:border-blue-600">
+            <input type="tel" id="stu-phone" placeholder="Parent Phone Number" required class="w-full border border-gray-300 p-2.5 text-xs sm:text-sm outline-none focus:border-blue-600">
+            <button type="submit" id="btn-submit-student" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 text-xs sm:text-sm">Add Student</button>
           </form>
         </div>
 
         <div class="bg-white border border-gray-300">
-          <div id="lbl-attendance-heading" class="p-4 border-b border-gray-300 font-bold text-sm uppercase bg-gray-50">Attendance Register</div>
-          <div class="overflow-x-auto">
-            <table class="w-full text-left text-sm">
-              <thead class="bg-gray-100 border-b border-gray-300 uppercase text-xs">
+          <div id="lbl-attendance-heading" class="p-3 border-b border-gray-300 font-bold text-xs sm:text-sm uppercase bg-gray-50">Attendance Register</div>
+          <div class="overflow-x-auto table-scroll">
+            <table class="w-full text-left text-xs sm:text-sm whitespace-nowrap">
+              <thead class="bg-gray-100 border-b border-gray-300 uppercase text-[10px] sm:text-xs">
                 <tr>
-                  <th id="th-stu-id" class="p-3 border-r">ID</th>
-                  <th id="th-stu-name" class="p-3 border-r">Name</th>
-                  <th id="th-stu-class" class="p-3 border-r">Class</th>
-                  <th id="th-stu-att" class="p-3 text-center">Attendance (Today)</th>
+                  <th id="th-stu-id" class="p-2.5 border-r">ID</th>
+                  <th id="th-stu-name" class="p-2.5 border-r">Name</th>
+                  <th id="th-stu-class" class="p-2.5 border-r">Class</th>
+                  <th id="th-stu-att" class="p-2.5 text-center">Attendance</th>
                 </tr>
               </thead>
               <tbody id="students-table-body">
@@ -105,97 +112,103 @@
       </section>
 
       <!-- 3. അധ്യാപകർ -->
-      <section id="tab-teachers" class="hidden space-y-6">
-        <div class="bg-white border border-gray-300 p-5">
-          <h2 id="lbl-add-teacher-title" class="text-sm font-bold uppercase mb-4 border-b pb-2">Add New Teacher</h2>
-          <form onsubmit="addTeacher(event)" class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <input type="text" id="tea-name" placeholder="Teacher Name" required class="border border-gray-300 p-2 text-sm outline-none focus:border-blue-500">
-            <input type="text" id="tea-desig" placeholder="Designation" required class="border border-gray-300 p-2 text-sm outline-none focus:border-blue-500">
-            <input type="text" id="tea-phone" placeholder="Phone Number" required class="border border-gray-300 p-2 text-sm outline-none focus:border-blue-500">
-            <button type="submit" id="btn-submit-teacher" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 text-sm">Add Teacher</button>
+      <section id="tab-teachers" class="hidden space-y-4">
+        <div class="bg-white border border-gray-300 p-4">
+          <h2 id="lbl-add-teacher-title" class="text-xs sm:text-sm font-bold uppercase mb-3 border-b pb-2">Add New Teacher</h2>
+          <form onsubmit="addTeacher(event)" class="flex flex-col gap-2 sm:grid sm:grid-cols-4">
+            <input type="text" id="tea-name" placeholder="Teacher Name" required class="w-full border border-gray-300 p-2.5 text-xs sm:text-sm outline-none focus:border-purple-600">
+            <input type="text" id="tea-desig" placeholder="Designation" required class="w-full border border-gray-300 p-2.5 text-xs sm:text-sm outline-none focus:border-purple-600">
+            <input type="tel" id="tea-phone" placeholder="Phone Number" required class="w-full border border-gray-300 p-2.5 text-xs sm:text-sm outline-none focus:border-purple-600">
+            <button type="submit" id="btn-submit-teacher" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 px-4 text-xs sm:text-sm">Add Teacher</button>
           </form>
         </div>
         <div class="bg-white border border-gray-300">
-          <div id="lbl-teacher-list-heading" class="p-4 border-b border-gray-300 font-bold text-sm uppercase bg-gray-50">Teachers List</div>
-          <table class="w-full text-left text-sm">
-            <thead class="bg-gray-100 border-b border-gray-300 uppercase text-xs">
-              <tr>
-                <th id="th-tea-name" class="p-3 border-r">Name</th>
-                <th id="th-tea-desig" class="p-3 border-r">Designation</th>
-                <th id="th-tea-phone" class="p-3 border-r">Phone</th>
-              </tr>
-            </thead>
-            <tbody id="teachers-table-body">
-              <tr><td colspan="3" class="p-4 text-center text-gray-500">Loading data...</td></tr>
-            </tbody>
-          </table>
+          <div id="lbl-teacher-list-heading" class="p-3 border-b border-gray-300 font-bold text-xs sm:text-sm uppercase bg-gray-50">Teachers List</div>
+          <div class="overflow-x-auto table-scroll">
+            <table class="w-full text-left text-xs sm:text-sm whitespace-nowrap">
+              <thead class="bg-gray-100 border-b border-gray-300 uppercase text-[10px] sm:text-xs">
+                <tr>
+                  <th id="th-tea-name" class="p-2.5 border-r">Name</th>
+                  <th id="th-tea-desig" class="p-2.5 border-r">Designation</th>
+                  <th id="th-tea-phone" class="p-2.5 border-r">Phone</th>
+                </tr>
+              </thead>
+              <tbody id="teachers-table-body">
+                <tr><td colspan="3" class="p-4 text-center text-gray-500">Loading data...</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
 
       <!-- 4. ഫീസ് മാനേജ്‌മെന്റ് -->
-      <section id="tab-fees" class="hidden space-y-6">
-        <div class="bg-white border border-gray-300 p-5">
-          <h2 id="lbl-add-fee-title" class="text-sm font-bold uppercase mb-4 border-b pb-2">Record Fee Payment</h2>
-          <form onsubmit="addFeePayment(event)" class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <select id="fee-student-select" required class="border border-gray-300 p-2 text-sm outline-none">
+      <section id="tab-fees" class="hidden space-y-4">
+        <div class="bg-white border border-gray-300 p-4">
+          <h2 id="lbl-add-fee-title" class="text-xs sm:text-sm font-bold uppercase mb-3 border-b pb-2">Record Fee Payment</h2>
+          <form onsubmit="addFeePayment(event)" class="flex flex-col gap-2 sm:grid sm:grid-cols-4">
+            <select id="fee-student-select" required class="w-full border border-gray-300 p-2.5 text-xs sm:text-sm outline-none bg-white">
               <option value="">Select Student</option>
             </select>
-            <input type="text" id="fee-month" placeholder="Month (e.g. November)" required class="border border-gray-300 p-2 text-sm outline-none">
-            <input type="number" id="fee-amount" placeholder="Amount (₹)" required class="border border-gray-300 p-2 text-sm outline-none">
-            <button type="submit" id="btn-submit-fee" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 text-sm">Record Payment</button>
+            <input type="text" id="fee-month" placeholder="Month (e.g. November)" required class="w-full border border-gray-300 p-2.5 text-xs sm:text-sm outline-none">
+            <input type="number" id="fee-amount" placeholder="Amount (₹)" required class="w-full border border-gray-300 p-2.5 text-xs sm:text-sm outline-none">
+            <button type="submit" id="btn-submit-fee" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-4 text-xs sm:text-sm">Record Payment</button>
           </form>
         </div>
         <div class="bg-white border border-gray-300">
-          <div id="lbl-fee-history-heading" class="p-4 border-b border-gray-300 font-bold text-sm uppercase bg-gray-50">Fee Payment History</div>
-          <table class="w-full text-left text-sm">
-            <thead class="bg-gray-100 border-b border-gray-300 uppercase text-xs">
-              <tr>
-                <th id="th-fee-student" class="p-3 border-r">Student</th>
-                <th id="th-fee-month" class="p-3 border-r">Month</th>
-                <th id="th-fee-amount" class="p-3 border-r">Amount</th>
-                <th id="th-fee-receipt" class="p-3 text-center">Send Receipt</th>
-              </tr>
-            </thead>
-            <tbody id="fees-table-body">
-              <tr><td colspan="4" class="p-4 text-center text-gray-500">Loading data...</td></tr>
-            </tbody>
-          </table>
+          <div id="lbl-fee-history-heading" class="p-3 border-b border-gray-300 font-bold text-xs sm:text-sm uppercase bg-gray-50">Fee Payment History</div>
+          <div class="overflow-x-auto table-scroll">
+            <table class="w-full text-left text-xs sm:text-sm whitespace-nowrap">
+              <thead class="bg-gray-100 border-b border-gray-300 uppercase text-[10px] sm:text-xs">
+                <tr>
+                  <th id="th-fee-student" class="p-2.5 border-r">Student</th>
+                  <th id="th-fee-month" class="p-2.5 border-r">Month</th>
+                  <th id="th-fee-amount" class="p-2.5 border-r">Amount</th>
+                  <th id="th-fee-receipt" class="p-2.5 text-center">Receipt</th>
+                </tr>
+              </thead>
+              <tbody id="fees-table-body">
+                <tr><td colspan="4" class="p-4 text-center text-gray-500">Loading data...</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
 
       <!-- 5. ഭക്ഷണ ഷെഡ്യൂൾ -->
-      <section id="tab-food" class="hidden space-y-6">
-        <div class="bg-white border border-gray-300 p-5">
-          <h2 id="lbl-add-food-title" class="text-sm font-bold uppercase mb-4 border-b pb-2">Add House to Food Routine</h2>
-          <form onsubmit="addFoodHouse(event)" class="grid grid-cols-1 md:grid-cols-5 gap-3">
-            <input type="number" id="food-house-no" placeholder="House No (1-90)" required class="border border-gray-300 p-2 text-sm outline-none">
-            <input type="text" id="food-family-name" placeholder="Head of Family" required class="border border-gray-300 p-2 text-sm outline-none">
-            <input type="text" id="food-phone" placeholder="Phone Number" required class="border border-gray-300 p-2 text-sm outline-none">
-            <select id="food-slot" class="border border-gray-300 p-2 text-sm outline-none">
+      <section id="tab-food" class="hidden space-y-4">
+        <div class="bg-white border border-gray-300 p-4">
+          <h2 id="lbl-add-food-title" class="text-xs sm:text-sm font-bold uppercase mb-3 border-b pb-2">Add House to Routine</h2>
+          <form onsubmit="addFoodHouse(event)" class="flex flex-col gap-2 sm:grid sm:grid-cols-5">
+            <input type="number" id="food-house-no" placeholder="House No (1-90)" required class="w-full border border-gray-300 p-2.5 text-xs sm:text-sm outline-none">
+            <input type="text" id="food-family-name" placeholder="Head of Family" required class="w-full border border-gray-300 p-2.5 text-xs sm:text-sm outline-none">
+            <input type="tel" id="food-phone" placeholder="Phone Number" required class="w-full border border-gray-300 p-2.5 text-xs sm:text-sm outline-none">
+            <select id="food-slot" class="w-full border border-gray-300 p-2.5 text-xs sm:text-sm outline-none bg-white">
               <option value="morning">Morning</option>
               <option value="noon">Noon</option>
               <option value="night">Night</option>
             </select>
-            <button type="submit" id="btn-submit-food" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-3 text-sm">Add to Routine</button>
+            <button type="submit" id="btn-submit-food" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-2.5 px-3 text-xs sm:text-sm">Add to Routine</button>
           </form>
         </div>
 
         <div class="bg-white border border-gray-300">
-          <div id="lbl-food-routine-heading" class="p-4 border-b border-gray-300 font-bold text-sm uppercase bg-gray-50">Food Schedule & Reminders</div>
-          <table class="w-full text-left text-sm">
-            <thead class="bg-gray-100 border-b border-gray-300 uppercase text-xs">
-              <tr>
-                <th id="th-food-house" class="p-3 border-r">House No</th>
-                <th id="th-food-head" class="p-3 border-r">Name</th>
-                <th id="th-food-time" class="p-3 border-r">Time Slot</th>
-                <th id="th-food-phone" class="p-3 border-r">Phone</th>
-                <th id="th-food-action" class="p-3 text-center">Reminder</th>
-              </tr>
-            </thead>
-            <tbody id="food-table-body">
-              <tr><td colspan="5" class="p-4 text-center text-gray-500">Loading data...</td></tr>
-            </tbody>
-          </table>
+          <div id="lbl-food-routine-heading" class="p-3 border-b border-gray-300 font-bold text-xs sm:text-sm uppercase bg-gray-50">Food Schedule & Reminders</div>
+          <div class="overflow-x-auto table-scroll">
+            <table class="w-full text-left text-xs sm:text-sm whitespace-nowrap">
+              <thead class="bg-gray-100 border-b border-gray-300 uppercase text-[10px] sm:text-xs">
+                <tr>
+                  <th id="th-food-house" class="p-2.5 border-r">House</th>
+                  <th id="th-food-head" class="p-2.5 border-r">Name</th>
+                  <th id="th-food-time" class="p-2.5 border-r">Slot</th>
+                  <th id="th-food-phone" class="p-2.5 border-r">Phone</th>
+                  <th id="th-food-action" class="p-2.5 text-center">Action</th>
+                </tr>
+              </thead>
+              <tbody id="food-table-body">
+                <tr><td colspan="5" class="p-4 text-center text-gray-500">Loading data...</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
 
@@ -209,7 +222,7 @@
 
     let cachedStudents = [];
     let currentTab = 'dashboard';
-    let currentLang = 'en'; // ഡിഫോൾട്ട് ആയി English
+    let currentLang = 'en';
 
     const dict = {
       en: {
@@ -226,7 +239,7 @@
         titleFood: "Food Schedule & Reminders",
         totStudents: "Total Students",
         totTeachers: "Total Teachers",
-        foodHouses: "Food Routine Houses",
+        foodHouses: "Routine Houses",
         todayFood: "Today's Food",
         addStudent: "Add New Student",
         stuNamePh: "Student Name",
@@ -237,7 +250,7 @@
         thId: "ID",
         thName: "Name",
         thClass: "Class",
-        thAtt: "Attendance (Today)",
+        thAtt: "Attendance",
         btnPresent: "Present",
         btnAbsent: "Absent",
         addTeacher: "Add New Teacher",
@@ -257,17 +270,17 @@
         thStudent: "Student",
         thMonth: "Month",
         thAmount: "Amount",
-        thReceipt: "Send Receipt",
-        btnReceipt: "WhatsApp Receipt",
-        addFood: "Add House to Food Routine",
+        thReceipt: "Receipt",
+        btnReceipt: "WhatsApp",
+        addFood: "Add House to Routine",
         foodHousePh: "House No (1-90)",
         foodFamilyPh: "Head of Family",
         btnAddFood: "Add to Routine",
         foodRoutineHeading: "Food Schedule & Reminders",
-        thHouse: "House No",
-        thTime: "Time Slot",
-        thReminder: "Reminder",
-        btnReminder: "WhatsApp Reminder",
+        thHouse: "House",
+        thTime: "Slot",
+        thReminder: "Action",
+        btnReminder: "WhatsApp",
         morning: "Morning",
         noon: "Noon",
         night: "Night"
@@ -297,7 +310,7 @@
         thId: "ഐഡി",
         thName: "പേര്",
         thClass: "ക്ലാസ്",
-        thAtt: "ഹാജർ (ഇന്ന്)",
+        thAtt: "ഹാജർ",
         btnPresent: "ഹാജർ",
         btnAbsent: "ലീവ്",
         addTeacher: "പുതിയ അധ്യാപകരെ ചേർക്കുക",
@@ -317,17 +330,17 @@
         thStudent: "വിദ്യാർത്ഥി",
         thMonth: "മാസം",
         thAmount: "തുക",
-        thReceipt: "രസീത് അയക്കുക",
-        btnReceipt: "WhatsApp രസീത്",
-        addFood: "ഭക്ഷണ വിതരണ ഷെഡ്യൂളിലേക്ക് വീട് ചേർക്കുക",
+        thReceipt: "രസീത്",
+        btnReceipt: "WhatsApp",
+        addFood: "ഭക്ഷണ വിതരണത്തിലേക്ക് ചേർക്കുക",
         foodHousePh: "വീട്ടുനമ്പർ (1-90)",
         foodFamilyPh: "കുടുംബനാഥന്റെ പേര്",
         btnAddFood: "ലിസ്റ്റിലേക്ക് ചേർക്കുക",
-        foodRoutineHeading: "ഭക്ഷണ വിതരണ ലിസ്റ്റ് & റിമൈൻഡർ",
-        thHouse: "വീട്ടുനമ്പർ",
+        foodRoutineHeading: "ഭക്ഷണ വിതരണ ലിസ്റ്റ്",
+        thHouse: "വീട്",
         thTime: "സമയം",
         thReminder: "റിമൈൻഡർ",
-        btnReminder: "WhatsApp റിമൈൻഡർ",
+        btnReminder: "WhatsApp",
         morning: "രാവിലെ",
         noon: "ഉച്ചയ്ക്ക്",
         night: "രാത്രി"
@@ -338,8 +351,8 @@
       currentLang = lang;
       const t = dict[lang];
 
-      document.getElementById('lang-btn-en').className = lang === 'en' ? "px-2.5 py-1 bg-slate-900 text-white" : "px-2.5 py-1 text-gray-700 hover:bg-gray-200";
-      document.getElementById('lang-btn-ml').className = lang === 'ml' ? "px-2.5 py-1 bg-slate-900 text-white" : "px-2.5 py-1 text-gray-700 hover:bg-gray-200";
+      document.getElementById('lang-btn-en').className = lang === 'en' ? "px-2 py-1 bg-slate-900 text-white" : "px-2 py-1 text-gray-700 hover:bg-gray-200";
+      document.getElementById('lang-btn-ml').className = lang === 'ml' ? "px-2 py-1 bg-slate-900 text-white" : "px-2 py-1 text-gray-700 hover:bg-gray-200";
 
       document.getElementById('txt-app-title').innerText = t.appTitle;
       document.getElementById('btn-dashboard').innerText = t.navDashboard;
@@ -433,10 +446,8 @@
       };
       document.getElementById('page-title').innerText = titles[tabId];
 
-      if (window.innerWidth < 768) {
-        const sidebar = document.getElementById('sidebar');
-        if (!sidebar.classList.contains('-translate-x-full')) toggleSidebar();
-      }
+      const sidebar = document.getElementById('sidebar');
+      if (!sidebar.classList.contains('-translate-x-full')) toggleSidebar();
 
       loadDataForTab(tabId);
     }
@@ -457,7 +468,8 @@
     }
 
     async function loadStudents() {
-      const { data } = await db.from('students').select('*').order('id', { ascending: false });
+      const { data, error } = await db.from('students').select('*').order('id', { ascending: false });
+      if (error) return;
       cachedStudents = data || [];
       document.getElementById('stat-students-count').innerText = cachedStudents.length;
 
@@ -475,12 +487,12 @@
       cachedStudents.forEach(s => {
         tbody.innerHTML += `
           <tr class="border-b border-gray-200">
-            <td class="p-3 border-r font-mono font-bold">#${s.id}</td>
-            <td class="p-3 border-r font-medium">${s.name}</td>
-            <td class="p-3 border-r">${s.class}</td>
-            <td class="p-3 text-center space-x-2">
-              <button onclick="markAttendance(${s.id}, 'present')" class="bg-emerald-600 text-white px-2.5 py-1 text-xs font-bold">${t.btnPresent}</button>
-              <button onclick="markAttendance(${s.id}, 'absent')" class="bg-rose-600 text-white px-2.5 py-1 text-xs font-bold">${t.btnAbsent}</button>
+            <td class="p-2.5 border-r font-mono font-bold">#${s.id}</td>
+            <td class="p-2.5 border-r font-medium">${s.name}</td>
+            <td class="p-2.5 border-r">${s.class}</td>
+            <td class="p-2.5 text-center space-x-1 sm:space-x-2">
+              <button onclick="markAttendance(${s.id}, 'present')" class="bg-emerald-600 active:bg-emerald-700 text-white px-2 py-1 text-[11px] font-bold">${t.btnPresent}</button>
+              <button onclick="markAttendance(${s.id}, 'absent')" class="bg-rose-600 active:bg-rose-700 text-white px-2 py-1 text-[11px] font-bold">${t.btnAbsent}</button>
             </td>
           </tr>
         `;
@@ -525,9 +537,9 @@
       teachers.forEach(t => {
         tbody.innerHTML += `
           <tr class="border-b border-gray-200">
-            <td class="p-3 border-r font-medium">${t.name}</td>
-            <td class="p-3 border-r">${t.designation}</td>
-            <td class="p-3 border-r font-mono">${t.phone || '-'}</td>
+            <td class="p-2.5 border-r font-medium">${t.name}</td>
+            <td class="p-2.5 border-r">${t.designation}</td>
+            <td class="p-2.5 border-r font-mono">${t.phone || '-'}</td>
           </tr>
         `;
       });
@@ -565,11 +577,11 @@
         const phone = f.students ? f.students.phone : '';
         tbody.innerHTML += `
           <tr class="border-b border-gray-200">
-            <td class="p-3 border-r font-medium">${studentName}</td>
-            <td class="p-3 border-r">${f.month}</td>
-            <td class="p-3 border-r font-mono font-bold">₹${f.amount}</td>
-            <td class="p-3 text-center">
-              <button onclick="sendFeeReceipt('${phone}', '${studentName}', '${f.month}', '${f.amount}')" class="bg-blue-600 text-white px-2 py-1 text-xs font-bold">${t.btnReceipt}</button>
+            <td class="p-2.5 border-r font-medium">${studentName}</td>
+            <td class="p-2.5 border-r">${f.month}</td>
+            <td class="p-2.5 border-r font-mono font-bold">₹${f.amount}</td>
+            <td class="p-2.5 text-center">
+              <button onclick="sendFeeReceipt('${phone}', '${studentName}', '${f.month}', '${f.amount}')" class="bg-blue-600 active:bg-blue-700 text-white px-2 py-1 text-[11px] font-bold">${t.btnReceipt}</button>
             </td>
           </tr>
         `;
@@ -614,12 +626,12 @@
         const slotText = h.meal_slot === 'morning' ? t.morning : h.meal_slot === 'noon' ? t.noon : t.night;
         tbody.innerHTML += `
           <tr class="border-b border-gray-200">
-            <td class="p-3 border-r font-mono font-bold">#${h.house_no}</td>
-            <td class="p-3 border-r font-medium">${h.family_name}</td>
-            <td class="p-3 border-r">${slotText}</td>
-            <td class="p-3 border-r font-mono">${h.phone}</td>
-            <td class="p-3 text-center">
-              <button onclick="sendFoodReminder('${h.phone}', '${h.family_name}', '${slotText}')" class="bg-emerald-600 text-white px-2 py-1 text-xs font-bold">${t.btnReminder}</button>
+            <td class="p-2.5 border-r font-mono font-bold">#${h.house_no}</td>
+            <td class="p-2.5 border-r font-medium">${h.family_name}</td>
+            <td class="p-2.5 border-r">${slotText}</td>
+            <td class="p-2.5 border-r font-mono">${h.phone}</td>
+            <td class="p-2.5 text-center">
+              <button onclick="sendFoodReminder('${h.phone}', '${h.family_name}', '${slotText}')" class="bg-emerald-600 active:bg-emerald-700 text-white px-2 py-1 text-[11px] font-bold">${t.btnReminder}</button>
             </td>
           </tr>
         `;
@@ -648,7 +660,6 @@
       window.open(`https://wa.me/91${phone}?text=${msg}`, '_blank');
     }
 
-    // തുടക്കത്തിൽ ഇംഗ്ലീഷ് ഭാഷ ലോഡ് ചെയ്യുന്നു
     setLanguage('en');
   </script>
 </body>
