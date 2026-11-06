@@ -397,15 +397,7 @@
         </div>
       </section>
 
-    function onFeeStudentChange(studentId) {
-  const student = cachedStudents.find(s => s.id == studentId);
-  const amountInput = document.getElementById('fee-amount');
-  if (student) {
-    amountInput.value = student.monthly_fee !== undefined ? student.monthly_fee : 0;
-  } else {
-    amountInput.value = '';
-  }
-}
+    
       <!-- ================= STAFF ROLES ================= -->
       <section id="tab-roles" class="hidden space-y-4">
         <div class="bg-white border border-gray-300 p-4">
@@ -481,6 +473,7 @@
         formStaff.classList.add('hidden');
       }
     }
+    function onFeeStudentChange(studentId) { const student = cachedStudents.find(s => s.id == studentId); const amountInput = document.getElementById('fee-amount'); if (student) { amountInput.value = student.monthly_fee !== undefined ? student.monthly_fee : 0; } else { amountInput.value = ''; } }
 
     // --- STAFF AUTH ---
     async function handleStaffAuth(e) {
