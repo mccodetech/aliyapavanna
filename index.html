@@ -8,13 +8,37 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     * { border-radius: 0px !important; }
-    /* മൊബൈൽ ടേബിളുകൾക്ക് സുഗമമായ സ്ക്രോളിംഗ് */
     .table-scroll {
       -webkit-overflow-scrolling: touch;
     }
   </style>
 </head>
 <body class="bg-gray-100 flex min-h-screen font-sans text-gray-800 antialiased">
+
+  <!-- ================= AUTHENTICATION MODAL / SCREEN ================= -->
+  <div id="auth-screen" class="fixed inset-0 bg-slate-900 z-[100] flex items-center justify-center p-4">
+    <div class="bg-white p-6 sm:p-8 w-full max-w-sm border border-gray-300 shadow-xl space-y-4">
+      <div class="border-b border-gray-200 pb-3 text-center">
+        <h2 class="text-lg font-bold uppercase tracking-wider text-slate-900">Madrasa Portal</h2>
+        <p class="text-xs text-gray-500 mt-1">Sign in with your email & password</p>
+      </div>
+
+      <form id="auth-form" onsubmit="handleLogin(event)" class="space-y-3">
+        <div>
+          <label class="block text-[11px] font-bold uppercase text-gray-600 mb-1">Email</label>
+          <input type="email" id="auth-email" required placeholder="admin@madrasa.com" class="w-full border border-gray-300 p-2.5 text-xs sm:text-sm outline-none focus:border-blue-600">
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold uppercase text-gray-600 mb-1">Password</label>
+          <input type="password" id="auth-password" required placeholder="••••••••" class="w-full border border-gray-300 p-2.5 text-xs sm:text-sm outline-none focus:border-blue-600">
+        </div>
+        <p id="auth-error" class="text-xs text-rose-600 hidden font-semibold"></p>
+        <button type="submit" id="auth-submit-btn" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 text-xs sm:text-sm uppercase tracking-wide">
+          Login
+        </button>
+      </form>
+    </div>
+  </div>
 
   <!-- മൊബൈൽ ബാക്ക്ഡ്രോപ്പ് -->
   <div id="backdrop" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 z-40 hidden md:hidden"></div>
@@ -32,6 +56,14 @@
       <button onclick="switchTab('fees')" id="btn-fees" class="w-full text-left px-3 py-3 text-sm font-semibold border-l-4 border-transparent text-slate-300 hover:bg-slate-900">Fee Management</button>
       <button onclick="switchTab('food')" id="btn-food" class="w-full text-left px-3 py-3 text-sm font-semibold border-l-4 border-transparent text-slate-300 hover:bg-slate-900">Food Schedule (90 Houses)</button>
     </nav>
+
+    <!-- യൂസർ വിവരങ്ങളും ലോഗൗട്ട് ബട്ടണും -->
+    <div class="p-3 border-t border-slate-800 bg-slate-900/50">
+      <p id="user-display-email" class="text-[11px] text-gray-400 truncate mb-2">Not logged in</p>
+      <button onclick="handleLogout()" class="w-full bg-rose-700 hover:bg-rose-800 text-white font-bold py-1.5 px-3 text-xs uppercase tracking-wide">
+        Logout
+      </button>
+    </div>
   </aside>
 
   <!-- പ്രധാന കണ്ടന്റ് ഭാഗം -->
@@ -224,6 +256,60 @@
     let currentTab = 'dashboard';
     let currentLang = 'en';
 
+    // ---------------- AUTHENTICATION HANDLERS ----------------
+    async function initAuth() {
+      const { data: { session } } = await db.auth.getSession();
+      updateAuthUI(session);
+
+      db.auth.onAuthStateChange((_event, session) => {
+        updateAuthUI(session);
+      });
+    }
+
+    function updateAuthUI(session) {
+      const authScreen = document.getElementById('auth-screen');
+      const userDisplay = document.getElementById('user-display-email');
+
+      if (session && session.user) {
+        authScreen.classList.add('hidden');
+        userDisplay.innerText = session.user.email;
+        loadDataForTab(currentTab);
+      } else {
+        authScreen.classList.remove('hidden');
+        userDisplay.innerText = "Not logged in";
+      }
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('auth-email').value;
+      const password = document.getElementById('auth-password').value;
+      const errorEl = document.getElementById('auth-error');
+      const btn = document.getElementById('auth-submit-btn');
+
+      errorEl.classList.add('hidden');
+      btn.innerText = "Signing in...";
+      btn.disabled = true;
+
+      const { data, error } = await db.auth.signInWithPassword({ email, password });
+
+      btn.disabled = false;
+      btn.innerText = "Login";
+
+      if (error) {
+        errorEl.innerText = error.message;
+        errorEl.classList.remove('hidden');
+      } else {
+        e.target.reset();
+      }
+    }
+
+    async function handleLogout() {
+      const { error } = await db.auth.signOut();
+      if (error) alert("Logout error: " + error.message);
+    }
+
+    // ---------------- APP LOGIC & TRANSLATIONS ----------------
     const dict = {
       en: {
         appTitle: "MADRASA PORTAL",
@@ -660,7 +746,9 @@
       window.open(`https://wa.me/91${phone}?text=${msg}`, '_blank');
     }
 
+    // പ്രാരംഭ ഘട്ടം
     setLanguage('en');
+    initAuth();
   </script>
 </body>
 </html>
