@@ -13,15 +13,14 @@
 </head>
 <body class="bg-gray-100 flex min-h-screen font-sans text-gray-800 antialiased">
 
-  <!-- ================= 1. മെയിൻ ലോഗിൻ ഗേറ്റ്‌വേ (ENTRY SCREEN) ================= -->
+  <!-- ================= 1. ENTRY / GATEWAY SCREEN ================= -->
   <div id="auth-gate" class="fixed inset-0 bg-slate-950 z-[200] flex items-center justify-center p-4">
     <div class="bg-white p-6 sm:p-8 w-full max-w-md border border-gray-300 shadow-2xl space-y-4">
       <div class="border-b border-gray-200 pb-3 text-center">
         <h2 class="text-xl font-extrabold uppercase tracking-widest text-slate-900">MADRASA PORTAL</h2>
-        <p class="text-xs text-gray-500 mt-1">Select your login category to continue</p>
+        <p class="text-xs text-gray-500 mt-1">Select login mode to continue</p>
       </div>
 
-      <!-- ലോഗിൻ ടൈപ്പ് സെലക്ഷൻ ടാബുകൾ -->
       <div class="flex border border-gray-300 bg-gray-100 text-xs font-bold">
         <button id="gate-tab-staff" onclick="switchGateType('staff')" class="flex-1 py-2.5 bg-slate-900 text-white uppercase tracking-wider">
           Staff / Admin
@@ -31,11 +30,11 @@
         </button>
       </div>
 
-      <!-- A. സ്റ്റാഫ് / അഡ്മിൻ ലോഗിൻ ഫോം -->
+      <!-- Staff / Admin Form -->
       <form id="gate-staff-form" onsubmit="handleStaffAuth(event)" class="space-y-3">
         <div>
           <label class="block text-[11px] font-bold uppercase text-gray-600 mb-1">Email Address</label>
-          <input type="email" id="gate-staff-email" required placeholder="admin@madrasa.com" class="w-full border p-2.5 text-xs sm:text-sm outline-none focus:border-blue-600">
+          <input type="email" id="gate-staff-email" required placeholder="chembrasseri1@gmail.com" class="w-full border p-2.5 text-xs sm:text-sm outline-none focus:border-blue-600">
         </div>
         <div>
           <label class="block text-[11px] font-bold uppercase text-gray-600 mb-1">Password</label>
@@ -47,7 +46,7 @@
         </button>
       </form>
 
-      <!-- B. രക്ഷിതാക്കൾക്കുള്ള ലോഗിൻ ഫോം (Student ID + Phone) -->
+      <!-- Parent Form -->
       <form id="gate-parent-form" onsubmit="handleParentAuth(event)" class="space-y-3 hidden">
         <div>
           <label class="block text-[11px] font-bold uppercase text-gray-600 mb-1">Student ID (കുട്ടിയുടെ ഐഡി)</label>
@@ -66,7 +65,7 @@
   </div>
 
   <!-- ================= 2. MODALS ================= -->
-  <!-- Student Edit Modal (Admin Only) -->
+  <!-- Student Edit Modal -->
   <div id="student-edit-modal" class="fixed inset-0 bg-black/70 z-[100] hidden items-center justify-center p-4">
     <div class="bg-white p-5 w-full max-w-sm border border-gray-300 shadow-xl space-y-3">
       <div class="flex justify-between items-center border-b pb-2">
@@ -134,7 +133,7 @@
 
   <div id="backdrop" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 z-40 hidden md:hidden"></div>
 
-  <!-- ================= 3. സൈഡ്‌ബാർ ================= -->
+  <!-- ================= 3. SIDEBAR ================= -->
   <aside id="sidebar" class="fixed top-0 bottom-0 left-0 w-64 bg-slate-950 text-white z-50 flex flex-col border-r border-slate-800 -translate-x-full md:translate-x-0 transition-transform duration-200">
     <div class="p-4 border-b border-slate-800 flex justify-between items-center">
       <span class="font-bold text-sm tracking-wider text-slate-100">MADRASA PORTAL</span>
@@ -142,34 +141,31 @@
     </div>
     
     <nav class="p-2 space-y-1 flex-1 overflow-y-auto text-xs sm:text-sm">
-      <!-- പൊതു നോട്ടീസ് ബോർഡ് (എല്ലാവർക്കും കാണാം) -->
       <button onclick="switchTab('notices')" id="btn-notices" class="w-full text-left px-3 py-2.5 font-semibold border-l-4 border-blue-500 bg-slate-800 text-blue-400">Notice Board</button>
 
-      <!-- രക്ഷിതാക്കൾക്കുള്ള പോർട്ടൽ -->
+      <!-- Parent Tab -->
       <div id="menu-parent-area" class="hidden">
-        <button onclick="switchTab('parent-view')" id="btn-parent-view" class="w-full text-left px-3 py-2.5 font-semibold border-l-4 border-transparent text-slate-300 hover:bg-slate-900">My Student Profile</button>
+        <button onclick="switchTab('parent-view')" id="btn-parent-view" class="w-full text-left px-3 py-2.5 font-semibold border-l-4 border-transparent text-slate-300 hover:bg-slate-900">Student Profile</button>
       </div>
 
-      <!-- ഉസ്താദുമാർക്ക് കാണാവുന്നത് -->
+      <!-- Usthad / Sub-Admin Tab -->
       <div id="menu-usthad-area" class="pt-2 border-t border-slate-800 hidden space-y-1">
         <p class="px-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Teacher Panel</p>
         <button onclick="switchTab('attendance')" id="btn-attendance" class="w-full text-left px-3 py-2.5 font-semibold border-l-4 border-transparent text-slate-300 hover:bg-slate-900">Daily Attendance</button>
-        <button onclick="switchTab('food')" id="btn-food-usthad" class="w-full text-left px-3 py-2.5 font-semibold border-l-4 border-transparent text-slate-300 hover:bg-slate-900">Food Schedule</button>
+        <button onclick="switchTab('food')" id="btn-food" class="w-full text-left px-3 py-2.5 font-semibold border-l-4 border-transparent text-slate-300 hover:bg-slate-900">Food Schedule</button>
       </div>
 
-      <!-- അഡ്മിന് മാത്രം കാണാവുന്നത് -->
+      <!-- Super Admin Tab -->
       <div id="menu-admin-area" class="pt-2 border-t border-slate-800 hidden space-y-1">
         <p class="px-3 text-[10px] font-bold text-amber-500 uppercase tracking-wider">Admin Panel</p>
         <button onclick="switchTab('dashboard')" id="btn-dashboard" class="w-full text-left px-3 py-2.5 font-semibold border-l-4 border-transparent text-slate-300 hover:bg-slate-900">Dashboard</button>
         <button onclick="switchTab('students-dir')" id="btn-students-dir" class="w-full text-left px-3 py-2.5 font-semibold border-l-4 border-transparent text-slate-300 hover:bg-slate-900">Students Directory</button>
         <button onclick="switchTab('teachers')" id="btn-teachers" class="w-full text-left px-3 py-2.5 font-semibold border-l-4 border-transparent text-slate-300 hover:bg-slate-900">Teachers</button>
         <button onclick="switchTab('fees')" id="btn-fees" class="w-full text-left px-3 py-2.5 font-semibold border-l-4 border-transparent text-slate-300 hover:bg-slate-900">Fee Management</button>
-        <button onclick="switchTab('food')" id="btn-food-admin" class="w-full text-left px-3 py-2.5 font-semibold border-l-4 border-transparent text-slate-300 hover:bg-slate-900">Food Routine (Manage)</button>
         <button onclick="switchTab('roles')" id="btn-roles" class="w-full text-left px-3 py-2.5 font-semibold border-l-4 border-transparent text-amber-400 hover:bg-slate-900">Staff Permissions</button>
       </div>
     </nav>
 
-    <!-- താഴെയുള്ള യൂസർ പ്രൊഫൈലും ലോഗൗട്ടും -->
     <div class="p-3 border-t border-slate-800 bg-slate-900/60">
       <p id="user-display-name" class="text-[11px] text-emerald-400 font-mono truncate"></p>
       <p id="user-display-badge" class="text-[10px] text-gray-400 font-bold uppercase mb-2"></p>
@@ -177,7 +173,7 @@
     </div>
   </aside>
 
-  <!-- ================= 4. പ്രധാന പേജ് ഭാഗം ================= -->
+  <!-- ================= 4. MAIN WORKSPACE ================= -->
   <div class="flex-1 flex flex-col md:ml-64 w-full min-w-0">
     <header class="bg-white border-b border-gray-300 px-3 py-3 sm:px-6 flex items-center justify-between sticky top-0 z-30">
       <div class="flex items-center gap-2">
@@ -201,16 +197,16 @@
           </form>
         </div>
         <div class="bg-white border border-gray-300 p-4 space-y-3">
-          <h2 class="font-bold text-xs uppercase border-b pb-2 text-slate-800">Public Announcements / പൊതു അറിയിപ്പുകൾ</h2>
+          <h2 class="font-bold text-xs uppercase border-b pb-2 text-slate-800">Public Announcements</h2>
           <div id="notices-list" class="space-y-3"></div>
         </div>
       </section>
 
-      <!-- ================= PARENT VIEW (LOGGED-IN PARENT ONLY) ================= -->
+      <!-- ================= PARENT VIEW ================= -->
       <section id="tab-parent-view" class="hidden space-y-4">
         <div class="bg-white border border-gray-300 p-4">
           <h2 class="text-xs sm:text-sm font-bold uppercase mb-1">Student Details</h2>
-          <p class="text-xs text-gray-500">നിങ്ങളുടെ കുട്ടിയുടെ ഹാജർ, ഫീസ്, ഭക്ഷണ വിവരങ്ങൾ താഴെ കാണാം:</p>
+          <p class="text-xs text-gray-500">ഹാജർ, ഫീസ്, ഭക്ഷണ വിവരങ്ങൾ താഴെ കാണാം:</p>
         </div>
         <div id="parent-student-cards" class="grid sm:grid-cols-2 gap-4"></div>
         <div id="parent-food-card" class="bg-white border p-4 hidden">
@@ -219,7 +215,7 @@
         </div>
       </section>
 
-      <!-- ================= DAILY ATTENDANCE (USTHAD & ADMIN) ================= -->
+      <!-- ================= DAILY ATTENDANCE ================= -->
       <section id="tab-attendance" class="hidden space-y-4">
         <div class="bg-white border border-gray-300 p-4 flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -313,7 +309,7 @@
                   <th class="p-2.5 border-r">Slot</th>
                   <th class="p-2.5 border-r">Phone</th>
                   <th class="p-2.5 text-center">Reminder</th>
-                  <th class="p-2.5 text-center admin-only hidden">Manage</th>
+                  <th id="th-food-manage" class="p-2.5 text-center hidden">Manage</th>
                 </tr>
               </thead>
               <tbody id="food-table-body"></tbody>
@@ -454,12 +450,15 @@
     const SUPABASE_ANON_KEY = "sb_publishable_mKndkGCbbe7EOrMYgCUSCw_Wg_G_y9D";
     const db = window.supabase.createClient(SUPABASE_PROJECT_URL, SUPABASE_ANON_KEY);
 
-    let activeUser = null; // { type: 'staff'|'parent', email/phone, role, studentData, permissions }
+    // MASTER SUPER ADMIN EMAIL (ഇത് എപ്പോഴും SUPER ADMIN ആയിരിക്കും)
+    const MASTER_ADMIN_EMAIL = "chembrasseri1@gmail.com";
+
+    let activeUser = null; 
     let currentTab = 'notices';
     let foodDataList = [];
     let cachedStudents = [];
 
-    // --- GATEWAY TABS (STAFF vs PARENT) ---
+    // --- GATEWAY TABS ---
     function switchGateType(type) {
       const btnStaff = document.getElementById('gate-tab-staff');
       const btnParent = document.getElementById('gate-tab-parent');
@@ -479,7 +478,7 @@
       }
     }
 
-    // --- 1. STAFF AUTHENTICATION (EMAIL + PASSWORD) ---
+    // --- STAFF AUTH ---
     async function handleStaffAuth(e) {
       e.preventDefault();
       const email = document.getElementById('gate-staff-email').value.trim();
@@ -504,8 +503,22 @@
     }
 
     async function verifyStaffPermissions(email) {
-      const { data } = await db.from('staff_roles').select('*').eq('email', email).maybeSingle();
-      const permissions = data || { role: 'usthad', can_attendance: true, can_fees: false, can_food: false, can_notices: false };
+      let isMaster = (email.toLowerCase() === MASTER_ADMIN_EMAIL.toLowerCase());
+
+      let permissions = { 
+        role: isMaster ? 'admin' : 'usthad', 
+        can_attendance: true, 
+        can_fees: isMaster, 
+        can_food: isMaster, 
+        can_notices: true 
+      };
+
+      if(!isMaster) {
+        try {
+          const { data } = await db.from('staff_roles').select('*').eq('email', email).maybeSingle();
+          if(data) permissions = data;
+        } catch(e) {}
+      }
 
       activeUser = {
         type: 'staff',
@@ -524,7 +537,7 @@
       }
     }
 
-    // --- 2. PARENT AUTHENTICATION (STUDENT ID + PHONE NUMBER) ---
+    // --- PARENT AUTH ---
     async function handleParentAuth(e) {
       e.preventDefault();
       const stuId = document.getElementById('gate-stu-id').value.trim();
@@ -536,7 +549,6 @@
       btn.innerText = "Verifying...";
       btn.disabled = true;
 
-      // ചെക്ക് സ്റ്റുഡന്റ് ഐഡിയും ഫോൺ നമ്പറും
       const { data, error } = await db.from('students').select('*').eq('id', stuId).eq('phone', stuPhone).maybeSingle();
 
       btn.disabled = false;
@@ -558,25 +570,24 @@
       }
     }
 
-    // --- PORTAL LAYOUT & PERMISSIONS ---
+    // --- PORTAL LAYOUT UI ---
     function setupPortalLayout() {
       const menuParent = document.getElementById('menu-parent-area');
       const menuUsthad = document.getElementById('menu-usthad-area');
       const menuAdmin = document.getElementById('menu-admin-area');
       const adminNoticeBox = document.getElementById('admin-notice-create');
       const foodAddSection = document.getElementById('food-add-section');
-      const adminElements = document.querySelectorAll('.admin-only');
+      const thFoodManage = document.getElementById('th-food-manage');
 
       const nameEl = document.getElementById('user-display-name');
       const badgeEl = document.getElementById('user-display-badge');
 
-      // എല്ലാം ഒളിപ്പിക്കുക
       menuParent.classList.add('hidden');
       menuUsthad.classList.add('hidden');
       menuAdmin.classList.add('hidden');
       adminNoticeBox.classList.add('hidden');
       foodAddSection.classList.add('hidden');
-      adminElements.forEach(el => el.classList.add('hidden'));
+      if(thFoodManage) thFoodManage.classList.add('hidden');
 
       if(!activeUser) return;
 
@@ -587,26 +598,25 @@
       } else if(activeUser.type === 'staff') {
         nameEl.innerText = activeUser.email;
         const isAdmin = activeUser.role === 'admin';
-        badgeEl.innerText = isAdmin ? 'Super Admin' : 'Usthad';
+        badgeEl.innerText = isAdmin ? 'Super Admin' : 'Usthad / Sub-Admin';
 
         if(isAdmin) {
           menuAdmin.classList.remove('hidden');
           menuUsthad.classList.remove('hidden');
           adminNoticeBox.classList.remove('hidden');
           foodAddSection.classList.remove('hidden');
-          adminElements.forEach(el => el.classList.remove('hidden'));
+          if(thFoodManage) thFoodManage.classList.remove('hidden');
         } else {
           menuUsthad.classList.remove('hidden');
           if(activeUser.permissions.can_notices) adminNoticeBox.classList.remove('hidden');
           if(activeUser.permissions.can_food) {
             foodAddSection.classList.remove('hidden');
-            adminElements.forEach(el => el.classList.remove('hidden'));
+            if(thFoodManage) thFoodManage.classList.remove('hidden');
           }
         }
       }
     }
 
-    // --- PARENT PORTAL VIEW ---
     async function renderParentProfile(stu) {
       const container = document.getElementById('parent-student-cards');
       const foodCard = document.getElementById('parent-food-card');
@@ -615,13 +625,11 @@
       container.innerHTML = '<p class="text-xs text-gray-500">Loading student details...</p>';
       foodCard.classList.add('hidden');
 
-      // ഹാജർ
       const { data: att } = await db.from('attendance').select('status').eq('student_id', stu.id);
       const totalDays = att ? att.length : 0;
       const presentDays = att ? att.filter(a => a.status === 'present').length : 0;
       const percentage = totalDays > 0 ? Math.round((presentDays / totalDays) * 100) : 0;
 
-      // ഫീസ്
       const { data: fees } = await db.from('fee_payments').select('*').eq('student_id', stu.id).order('id', { ascending: false });
       let feeHtml = fees && fees.length > 0 
         ? fees.map(f => `<span class="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 font-bold mr-1">${f.month}: ₹${f.amount}</span>`).join(' ')
@@ -644,7 +652,6 @@
         </div>
       `;
 
-      // ഭക്ഷണ ഷെഡ്യൂൾ
       const { data: foodRoutines } = await db.from('food_routine').select('*').eq('phone', stu.phone);
       if(foodRoutines && foodRoutines.length > 0) {
         foodCard.classList.remove('hidden');
@@ -659,7 +666,6 @@
       }
     }
 
-    // --- LOGOUT ---
     async function handlePortalLogout() {
       if(activeUser && activeUser.type === 'staff') {
         await db.auth.signOut();
@@ -668,7 +674,6 @@
       document.getElementById('auth-gate').classList.remove('hidden');
     }
 
-    // --- NAVIGATION ---
     function switchTab(tabId) {
       currentTab = tabId;
       const allTabs = ['notices', 'parent-view', 'attendance', 'students-dir', 'food', 'dashboard', 'teachers', 'fees', 'roles'];
@@ -725,7 +730,7 @@
       if(tabId === 'roles') loadStaffRoles();
     }
 
-    // --- 1. DAILY ATTENDANCE (USTHAD VIEW) ---
+    // --- DAILY ATTENDANCE ---
     async function loadAttendanceTab() {
       await loadStudentsListCache();
       const tbody = document.getElementById('attendance-table-body');
@@ -788,7 +793,7 @@
       }
     }
 
-    // --- 2. STUDENTS DIRECTORY (ADMIN ONLY) ---
+    // --- STUDENTS DIRECTORY ---
     async function loadStudentsDirectory() {
       await loadStudentsListCache();
       document.getElementById('dir-student-count').innerText = cachedStudents.length;
@@ -879,7 +884,7 @@
       else { closeStudentEditModal(); loadStudentsDirectory(); }
     }
 
-    // --- 3. NOTICES ---
+    // --- NOTICES ---
     async function loadNotices() {
       const { data } = await db.from('notices').select('*').order('id', { ascending: false });
       const container = document.getElementById('notices-list');
@@ -915,7 +920,7 @@
       }
     }
 
-    // --- 4. FOOD ROUTINE ---
+    // --- FOOD ROUTINE & EDIT ---
     async function loadFoodSchedule() {
       const { data } = await db.from('food_routine').select('*').order('house_no', { ascending: true });
       foodDataList = data || [];
@@ -938,7 +943,7 @@
         night: { text: 'Night (രാത്രി)', color: 'bg-purple-100 text-purple-800' }
       };
 
-      const canManageFood = activeUser && activeUser.type === 'staff' && (activeUser.role === 'admin' || activeUser.permissions.can_food);
+      const canManageFood = activeUser && activeUser.type === 'staff' && (activeUser.role === 'admin' || (activeUser.permissions && activeUser.permissions.can_food));
 
       foodDataList.forEach(h => {
         const slot = slotLabels[h.meal_slot] || { text: h.meal_slot, color: 'bg-gray-100 text-gray-800' };
@@ -954,7 +959,7 @@
               </button>
             </td>
             ${canManageFood ? `
-            <td class="p-2.5 text-center admin-only">
+            <td class="p-2.5 text-center">
               <button onclick="openFoodEditModal(${h.id})" class="text-blue-600 hover:underline font-bold text-[11px]">Edit</button>
             </td>` : ''}
           </tr>
@@ -1028,7 +1033,7 @@
       else { alert("House added!"); e.target.reset(); loadFoodSchedule(); }
     }
 
-    // --- 5. TEACHERS & FEES ---
+    // --- TEACHERS & FEES ---
     async function loadTeachers() {
       const { data } = await db.from('teachers').select('*').order('id', { ascending: false });
       const tbody = document.getElementById('teachers-table-body');
@@ -1096,7 +1101,7 @@
       window.open(`https://wa.me/91${phone}?text=${msg}`, '_blank');
     }
 
-    // --- 6. STAFF ROLES MANAGEMENT ---
+    // --- STAFF ROLES ---
     async function loadStaffRoles() {
       const { data } = await db.from('staff_roles').select('*').order('id', { ascending: true });
       const tbody = document.getElementById('roles-table-body');
@@ -1111,7 +1116,7 @@
             <td class="p-2 border-r text-center">${r.can_food ? '✅' : '❌'}</td>
             <td class="p-2 border-r text-center">${r.can_notices ? '✅' : '❌'}</td>
             <td class="p-2 text-center">
-              ${r.email !== activeUser.email ? `<button onclick="deleteStaffRole(${r.id})" class="text-rose-600 font-bold hover:underline">Delete</button>` : '<span class="text-gray-400">Owner</span>'}
+              ${r.email.toLowerCase() !== MASTER_ADMIN_EMAIL.toLowerCase() ? `<button onclick="deleteStaffRole(${r.id})" class="text-rose-600 font-bold hover:underline">Delete</button>` : '<span class="text-gray-400 font-bold">Super Admin</span>'}
             </td>
           </tr>
         `;
@@ -1153,7 +1158,6 @@
       document.getElementById('stat-notices-count').innerText = n ? n.length : 0;
     }
 
-    // സ്റ്റാർട്ടപ്പ്
     const today = new Date().toISOString().split('T')[0];
     const attDateEl = document.getElementById('att-current-date');
     if(attDateEl) attDateEl.innerText = today;
