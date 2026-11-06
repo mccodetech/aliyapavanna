@@ -250,6 +250,7 @@
             <input type="text" id="stu-name" placeholder="Student Name" required class="w-full border p-2 text-xs">
             <input type="text" id="stu-class" placeholder="Class / Division" required class="w-full border p-2 text-xs">
             <input type="tel" id="stu-phone" placeholder="Parent Phone Number" required class="w-full border p-2 text-xs">
+            <input type="number" id="stu-fee" placeholder="പ്രതിമാസ ഫീസ് (₹) [സൗജന്യമെങ്കിൽ 0]" value="0" class="w-full border p-2 text-xs">
             <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 text-xs uppercase">Add Student</button>
           </form>
         </div>
@@ -370,9 +371,9 @@
         <div class="bg-white border border-gray-300 p-4">
           <h2 class="text-xs font-bold uppercase mb-3 border-b pb-2">Record Fee Payment</h2>
           <form onsubmit="addFeePayment(event)" class="flex flex-col gap-2 sm:grid sm:grid-cols-4">
-            <select id="fee-student-select" required class="w-full border p-2 text-xs bg-white">
-              <option value="">Select Student</option>
-            </select>
+            <select id="fee-student-select" onchange="onFeeStudentChange(this.value)" required class="w-full border p-2 text-xs bg-white">
+  <option value="">Select Student</option>
+</select>
             <input type="text" id="fee-month" placeholder="Month (e.g. November)" required class="w-full border p-2 text-xs">
             <input type="number" id="fee-amount" placeholder="Amount (₹)" required class="w-full border p-2 text-xs">
             <button type="submit" class="w-full bg-emerald-600 text-white font-bold py-2 text-xs uppercase">Record</button>
@@ -395,6 +396,16 @@
           </div>
         </div>
       </section>
+
+      function onFeeStudentChange(studentId) {
+  const student = cachedStudents.find(s => s.id == studentId);
+  const amountInput = document.getElementById('fee-amount');
+  if (student) {
+    amountInput.value = student.monthly_fee !== undefined ? student.monthly_fee : 0;
+  } else {
+    amountInput.value = '';
+  }
+}
 
       <!-- ================= STAFF ROLES ================= -->
       <section id="tab-roles" class="hidden space-y-4">
@@ -852,21 +863,23 @@
     }
 
     async function addStudent(e) {
-      if (e) e.preventDefault();
-      const { error } = await db.from('students').insert([{
-        name: document.getElementById('stu-name').value,
-        class: document.getElementById('stu-class').value,
-        phone: document.getElementById('stu-phone').value
-      }]);
-      if(error) alert(error.message);
-      else {
-        alert("Student Added!");
-        document.getElementById('stu-name').value = '';
-        document.getElementById('stu-class').value = '';
-        document.getElementById('stu-phone').value = '';
-        loadStudentsDirectory();
-      }
-    }
+  if (e) e.preventDefault();
+  const { error } = await db.from('students').insert([{
+    name: document.getElementById('stu-name').value,
+    class: document.getElementById('stu-class').value,
+    phone: document.getElementById('stu-phone').value,
+    monthly_fee: Number(document.getElementById('stu-fee').value) || 0
+  }]);
+  if(error) alert(error.message);
+  else {
+    alert("Student Added!");
+    document.getElementById('stu-name').value = '';
+    document.getElementById('stu-class').value = '';
+    document.getElementById('stu-phone').value = '';
+    document.getElementById('stu-fee').value = '0';
+    loadStudentsDirectory();
+  }
+}
 
     function openStudentEditModal(id) {
       const s = cachedStudents.find(x => x.id === id);
