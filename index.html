@@ -29,7 +29,36 @@
     </div>
   </div>
 
-  <!-- ================= 2. FOOD EDIT MODAL ================= -->
+  <!-- ================= 2. STUDENT EDIT MODAL (ADMIN ONLY) ================= -->
+  <div id="student-edit-modal" class="fixed inset-0 bg-black/70 z-[100] hidden items-center justify-center p-4">
+    <div class="bg-white p-5 w-full max-w-sm border border-gray-300 shadow-xl space-y-3">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h3 class="font-bold text-sm uppercase text-gray-900">Edit Student Details</h3>
+        <button onclick="closeStudentEditModal()" class="text-gray-500 hover:text-black font-bold">✕</button>
+      </div>
+      <form onsubmit="saveEditedStudent(event)" class="space-y-2.5">
+        <input type="hidden" id="edit-stu-id">
+        <div>
+          <label class="block text-[10px] font-bold uppercase text-gray-600">Student Name</label>
+          <input type="text" id="edit-stu-name" required class="w-full border p-2 text-xs">
+        </div>
+        <div>
+          <label class="block text-[10px] font-bold uppercase text-gray-600">Class / Division</label>
+          <input type="text" id="edit-stu-class" required class="w-full border p-2 text-xs">
+        </div>
+        <div>
+          <label class="block text-[10px] font-bold uppercase text-gray-600">Parent Phone</label>
+          <input type="tel" id="edit-stu-phone" required class="w-full border p-2 text-xs">
+        </div>
+        <div class="flex gap-2 pt-2">
+          <button type="button" onclick="deleteStudent()" class="w-1/2 bg-rose-600 text-white font-bold py-2 text-xs uppercase">Delete</button>
+          <button type="submit" class="w-1/2 bg-blue-600 text-white font-bold py-2 text-xs uppercase">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= 3. FOOD EDIT MODAL ================= -->
   <div id="food-edit-modal" class="fixed inset-0 bg-black/70 z-[100] hidden items-center justify-center p-4">
     <div class="bg-white p-5 w-full max-w-sm border border-gray-300 shadow-xl space-y-3">
       <div class="flex justify-between items-center border-b pb-2">
@@ -66,7 +95,6 @@
     </div>
   </div>
 
-  <!-- മൊബൈൽ ബാക്ക്ഡ്രോപ്പ് -->
   <div id="backdrop" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 z-40 hidden md:hidden"></div>
 
   <!-- സൈഡ്‌ബാർ -->
@@ -77,24 +105,27 @@
     </div>
     
     <nav class="p-2 space-y-1 flex-1 overflow-y-auto text-xs sm:text-sm">
-      <!-- പൊതു ടാബുകൾ -->
-      <button onclick="switchTab('notices')" id="btn-notices" class="w-full text-left px-3 py-2.5 font-semibold border-l-4 border-blue-500 bg-slate-800 text-blue-400">Notice Board (അറിയിപ്പുകൾ)</button>
-      <button onclick="switchTab('parents')" id="btn-parents" class="w-full text-left px-3 py-2.5 font-semibold border-l-4 border-transparent text-slate-300 hover:bg-slate-900">Parent Portal (രക്ഷിതാക്കൾ)</button>
-      <button onclick="switchTab('food')" id="btn-food" class="w-full text-left px-3 py-2.5 font-semibold border-l-4 border-transparent text-slate-300 hover:bg-slate-900">Food Schedule (ഭക്ഷണം)</button>
+      <button onclick="switchTab('notices')" id="btn-notices" class="w-full text-left px-3 py-2.5 font-semibold border-l-4 border-blue-500 bg-slate-800 text-blue-400">Notice Board</button>
+      <button onclick="switchTab('parents')" id="btn-parents" class="w-full text-left px-3 py-2.5 font-semibold border-l-4 border-transparent text-slate-300 hover:bg-slate-900">Parent Portal</button>
+      <button onclick="switchTab('food')" id="btn-food" class="w-full text-left px-3 py-2.5 font-semibold border-l-4 border-transparent text-slate-300 hover:bg-slate-900">Food Schedule</button>
       
-      <!-- സ്റ്റാഫ് & അഡ്മിൻ ടാബുകൾ -->
+      <!-- ഉസ്താദുമാർക്കും അഡ്മിനും കാണാവുന്നത് -->
+      <div id="usthad-menu-group" class="pt-3 border-t border-slate-800 mt-2 space-y-1 hidden">
+        <p class="px-3 text-[10px] font-bold text-gray-500 uppercase">Usthad Portal</p>
+        <button onclick="switchTab('attendance')" id="btn-attendance" class="w-full text-left px-3 py-2.5 font-semibold border-l-4 border-transparent text-slate-300 hover:bg-slate-900">Daily Attendance</button>
+      </div>
+
+      <!-- അഡ്മിന് മാത്രം കാണാവുന്നത് -->
       <div id="admin-menu-group" class="pt-3 border-t border-slate-800 mt-2 space-y-1 hidden">
-        <p class="px-3 text-[10px] font-bold text-gray-500 uppercase">Management</p>
+        <p class="px-3 text-[10px] font-bold text-amber-500 uppercase">Admin Portal</p>
         <button onclick="switchTab('dashboard')" id="btn-dashboard" class="w-full text-left px-3 py-2.5 font-semibold border-l-4 border-transparent text-slate-300 hover:bg-slate-900">Dashboard</button>
-        <button onclick="switchTab('students')" id="btn-students" class="w-full text-left px-3 py-2.5 font-semibold border-l-4 border-transparent text-slate-300 hover:bg-slate-900 hidden">Students & Attendance</button>
-        <button onclick="switchTab('teachers')" id="btn-teachers" class="w-full text-left px-3 py-2.5 font-semibold border-l-4 border-transparent text-slate-300 hover:bg-slate-900 hidden">Teachers</button>
-        <button onclick="switchTab('fees')" id="btn-fees" class="w-full text-left px-3 py-2.5 font-semibold border-l-4 border-transparent text-slate-300 hover:bg-slate-900 hidden">Fee Management</button>
-        <!-- Super Admin Only -->
-        <button onclick="switchTab('roles')" id="btn-roles" class="w-full text-left px-3 py-2.5 font-semibold border-l-4 border-transparent text-amber-400 hover:bg-slate-900 hidden">Staff Permissions (പവർ)</button>
+        <button onclick="switchTab('students-dir')" id="btn-students-dir" class="w-full text-left px-3 py-2.5 font-semibold border-l-4 border-transparent text-slate-300 hover:bg-slate-900">Students Directory</button>
+        <button onclick="switchTab('teachers')" id="btn-teachers" class="w-full text-left px-3 py-2.5 font-semibold border-l-4 border-transparent text-slate-300 hover:bg-slate-900">Teachers</button>
+        <button onclick="switchTab('fees')" id="btn-fees" class="w-full text-left px-3 py-2.5 font-semibold border-l-4 border-transparent text-slate-300 hover:bg-slate-900">Fee Management</button>
+        <button onclick="switchTab('roles')" id="btn-roles" class="w-full text-left px-3 py-2.5 font-semibold border-l-4 border-transparent text-amber-400 hover:bg-slate-900">Staff Permissions</button>
       </div>
     </nav>
 
-    <!-- താഴെയുള്ള Auth Status -->
     <div class="p-3 border-t border-slate-800 bg-slate-900/50">
       <div id="auth-logged-in-box" class="hidden">
         <p id="user-display-email" class="text-[11px] text-emerald-400 font-mono truncate"></p>
@@ -107,7 +138,6 @@
     </div>
   </aside>
 
-  <!-- പ്രധാന കണ്ടന്റ് ഭാഗം -->
   <div class="flex-1 flex flex-col md:ml-64 w-full min-w-0">
     <header class="bg-white border-b border-gray-300 px-3 py-3 sm:px-6 flex items-center justify-between sticky top-0 z-30">
       <div class="flex items-center gap-2">
@@ -120,7 +150,7 @@
 
     <main class="p-3 sm:p-6 space-y-6 overflow-x-hidden">
 
-      <!-- ================= 1. നോട്ടീസ് ബോർഡ് ================= -->
+      <!-- ================= NOTICE BOARD ================= -->
       <section id="tab-notices" class="space-y-4">
         <div id="admin-notice-create" class="bg-white border border-gray-300 p-4 hidden">
           <h2 class="text-xs font-bold uppercase mb-2">Publish New Notice</h2>
@@ -131,34 +161,31 @@
           </form>
         </div>
         <div class="bg-white border border-gray-300 p-4 space-y-3">
-          <h2 class="font-bold text-xs uppercase border-b pb-2 text-slate-800">Public Announcements / പൊതു അറിയിപ്പുകൾ</h2>
-          <div id="notices-list" class="space-y-3">
-            <p class="text-xs text-gray-500">Loading notices...</p>
-          </div>
+          <h2 class="font-bold text-xs uppercase border-b pb-2 text-slate-800">Public Announcements</h2>
+          <div id="notices-list" class="space-y-3"></div>
         </div>
       </section>
 
-      <!-- ================= 2. PARENT PORTAL ================= -->
+      <!-- ================= PARENT PORTAL ================= -->
       <section id="tab-parents" class="hidden space-y-4">
         <div class="bg-white border border-gray-300 p-4">
           <h2 class="text-xs sm:text-sm font-bold uppercase mb-2">Parent Portal / രക്ഷിതാക്കൾക്ക്</h2>
-          <p class="text-xs text-gray-600 mb-3">നിങ്ങളുടെ 10 അക്ക ഫോൺ നമ്പർ നൽകി കുട്ടിയുടെ ഹാജർ, ഫീസ്, ഭക്ഷണ വിവരങ്ങൾ കാണുക:</p>
+          <p class="text-xs text-gray-600 mb-3">നിങ്ങളുടെ 10 അക്ക ഫോൺ നമ്പർ നൽകി വിവരങ്ങൾ കാണുക:</p>
           <form onsubmit="searchParentData(event)" class="flex gap-2 max-w-md">
             <input type="tel" id="parent-search-phone" placeholder="Parent Phone Number" required class="flex-1 border p-2 text-xs sm:text-sm outline-none focus:border-blue-600">
             <button type="submit" class="bg-blue-600 text-white font-bold px-4 py-2 text-xs uppercase">Search</button>
           </form>
         </div>
-
         <div id="parent-results-container" class="space-y-4 hidden">
           <div id="parent-student-cards" class="grid sm:grid-cols-2 gap-4"></div>
           <div id="parent-food-card" class="bg-white border p-4 hidden">
-            <h3 class="font-bold text-xs uppercase text-amber-800 mb-1 border-b pb-1">നിങ്ങളുടെ ഭക്ഷണ വിതരണ ഷെഡ്യൂൾ</h3>
+            <h3 class="font-bold text-xs uppercase text-amber-800 mb-1 border-b pb-1">ഭക്ഷണ വിതരണ ഷെഡ്യൂൾ</h3>
             <div id="parent-food-details" class="text-xs space-y-1 mt-2"></div>
           </div>
         </div>
       </section>
 
-      <!-- ================= 3. FOOD SCHEDULE ================= -->
+      <!-- ================= FOOD SCHEDULE ================= -->
       <section id="tab-food" class="hidden space-y-4">
         <div id="food-add-section" class="bg-white border border-gray-300 p-4 hidden">
           <h2 class="text-xs sm:text-sm font-bold uppercase mb-3 border-b pb-2">Add House to Routine</h2>
@@ -174,7 +201,6 @@
             <button type="submit" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 text-xs uppercase">Add</button>
           </form>
         </div>
-
         <div class="bg-white border border-gray-300">
           <div class="p-3 border-b font-bold text-xs uppercase bg-gray-50 flex justify-between items-center">
             <span>ഭക്ഷണ വിതരണ ലിസ്റ്റ്</span>
@@ -192,15 +218,78 @@
                   <th class="p-2.5 text-center admin-only hidden">Manage</th>
                 </tr>
               </thead>
-              <tbody id="food-table-body">
-                <tr><td colspan="6" class="p-4 text-center text-gray-500">Loading food routine...</td></tr>
-              </tbody>
+              <tbody id="food-table-body"></tbody>
             </table>
           </div>
         </div>
       </section>
 
-      <!-- ================= 4. DASHBOARD ================= -->
+      <!-- ================= 1. DAILY ATTENDANCE (USTHAD & ADMIN) ================= -->
+      <section id="tab-attendance" class="hidden space-y-4">
+        <div class="bg-white border border-gray-300 p-4 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 class="text-xs sm:text-sm font-bold uppercase text-gray-900">Daily Attendance Register</h2>
+            <p class="text-[11px] text-gray-500">തിയ്യതി: <b id="att-current-date"></b></p>
+          </div>
+          <!-- MARK ALL PRESENT BUTTON -->
+          <button onclick="markAllStudentsPresent()" class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-4 py-2 text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+            Mark All Present (എല്ലാവരും ഹാജർ)
+          </button>
+        </div>
+
+        <div class="bg-white border border-gray-300">
+          <div class="overflow-x-auto table-scroll">
+            <table class="w-full text-left text-xs whitespace-nowrap">
+              <thead class="bg-gray-100 border-b uppercase text-[10px]">
+                <tr>
+                  <th class="p-2.5 border-r">ID</th>
+                  <th class="p-2.5 border-r">Name</th>
+                  <th class="p-2.5 border-r">Class</th>
+                  <th class="p-2.5 text-center">Mark Attendance</th>
+                </tr>
+              </thead>
+              <tbody id="attendance-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 2. STUDENTS DIRECTORY (ADMIN ONLY) ================= -->
+      <section id="tab-students-dir" class="hidden space-y-4">
+        <div class="bg-white border border-gray-300 p-4">
+          <h2 class="text-xs font-bold uppercase mb-3 border-b pb-2">Add New Student</h2>
+          <form onsubmit="addStudent(event)" class="flex flex-col gap-2 sm:grid sm:grid-cols-4">
+            <input type="text" id="stu-name" placeholder="Student Name" required class="w-full border p-2 text-xs">
+            <input type="text" id="stu-class" placeholder="Class / Division" required class="w-full border p-2 text-xs">
+            <input type="tel" id="stu-phone" placeholder="Parent Phone Number" required class="w-full border p-2 text-xs">
+            <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 text-xs uppercase">Add Student</button>
+          </form>
+        </div>
+
+        <div class="bg-white border border-gray-300">
+          <div class="p-3 border-b font-bold text-xs uppercase bg-gray-50 flex justify-between items-center">
+            <span>Student Management List (Admin)</span>
+            <span class="text-[10px] text-gray-500">ആകെ: <b id="dir-student-count">0</b> കുട്ടികൾ</span>
+          </div>
+          <div class="overflow-x-auto table-scroll">
+            <table class="w-full text-left text-xs whitespace-nowrap">
+              <thead class="bg-gray-100 border-b uppercase text-[10px]">
+                <tr>
+                  <th class="p-2.5 border-r">ID</th>
+                  <th class="p-2.5 border-r">Name</th>
+                  <th class="p-2.5 border-r">Class</th>
+                  <th class="p-2.5 border-r">Parent Phone</th>
+                  <th class="p-2.5 text-center">Manage</th>
+                </tr>
+              </thead>
+              <tbody id="students-directory-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= DASHBOARD ================= -->
       <section id="tab-dashboard" class="hidden space-y-4">
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <div class="bg-white border border-l-4 border-l-blue-600 p-3 sm:p-5">
@@ -222,36 +311,7 @@
         </div>
       </section>
 
-      <!-- ================= 5. STUDENTS & ATTENDANCE ================= -->
-      <section id="tab-students" class="hidden space-y-4">
-        <div class="bg-white border border-gray-300 p-4">
-          <h2 class="text-xs font-bold uppercase mb-3 border-b pb-2">Add New Student</h2>
-          <form onsubmit="addStudent(event)" class="flex flex-col gap-2 sm:grid sm:grid-cols-4">
-            <input type="text" id="stu-name" placeholder="Student Name" required class="w-full border p-2 text-xs">
-            <input type="text" id="stu-class" placeholder="Class / Division" required class="w-full border p-2 text-xs">
-            <input type="tel" id="stu-phone" placeholder="Parent Phone Number" required class="w-full border p-2 text-xs">
-            <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 text-xs uppercase">Add Student</button>
-          </form>
-        </div>
-        <div class="bg-white border border-gray-300">
-          <div class="p-3 border-b font-bold text-xs uppercase bg-gray-50">Attendance Register</div>
-          <div class="overflow-x-auto table-scroll">
-            <table class="w-full text-left text-xs whitespace-nowrap">
-              <thead class="bg-gray-100 border-b uppercase text-[10px]">
-                <tr>
-                  <th class="p-2 border-r">ID</th>
-                  <th class="p-2 border-r">Name</th>
-                  <th class="p-2 border-r">Class</th>
-                  <th class="p-2 text-center">Attendance</th>
-                </tr>
-              </thead>
-              <tbody id="students-table-body"></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <!-- ================= 6. TEACHERS ================= -->
+      <!-- ================= TEACHERS ================= -->
       <section id="tab-teachers" class="hidden space-y-4">
         <div class="bg-white border border-gray-300 p-4">
           <h2 class="text-xs font-bold uppercase mb-3 border-b pb-2">Add New Teacher</h2>
@@ -279,7 +339,7 @@
         </div>
       </section>
 
-      <!-- ================= 7. FEES ================= -->
+      <!-- ================= FEES ================= -->
       <section id="tab-fees" class="hidden space-y-4">
         <div class="bg-white border border-gray-300 p-4">
           <h2 class="text-xs font-bold uppercase mb-3 border-b pb-2">Record Fee Payment</h2>
@@ -310,7 +370,7 @@
         </div>
       </section>
 
-      <!-- ================= 8. STAFF PERMISSIONS (SUPER ADMIN ONLY) ================= -->
+      <!-- ================= STAFF PERMISSIONS ================= -->
       <section id="tab-roles" class="hidden space-y-4">
         <div class="bg-white border border-gray-300 p-4">
           <h2 class="text-xs font-bold uppercase mb-3 border-b pb-2">Add Sub-Admin / Usthad Permissions</h2>
@@ -365,9 +425,13 @@
     let currentUserPermissions = null;
     let currentTab = 'notices';
     let foodDataList = [];
+    let cachedStudents = [];
 
-    // --- INITIALIZATION ---
     async function init() {
+      const today = new Date().toISOString().split('T')[0];
+      const attDateEl = document.getElementById('att-current-date');
+      if(attDateEl) attDateEl.innerText = today;
+
       const { data: { session } } = await db.auth.getSession();
       currentSession = session;
       await fetchUserPermissions();
@@ -386,7 +450,7 @@
         if(data) {
           currentUserPermissions = data;
         } else {
-          // Default role if not in staff_roles
+          // Default role
           currentUserPermissions = { role: 'usthad', can_attendance: true, can_fees: false, can_food: false, can_notices: false };
         }
       } else {
@@ -399,11 +463,7 @@
       const loggedInBox = document.getElementById('auth-logged-in-box');
       const loggedOutBox = document.getElementById('auth-logged-out-box');
       const adminMenuGroup = document.getElementById('admin-menu-group');
-
-      const btnStudents = document.getElementById('btn-students');
-      const btnTeachers = document.getElementById('btn-teachers');
-      const btnFees = document.getElementById('btn-fees');
-      const btnRoles = document.getElementById('btn-roles');
+      const usthadMenuGroup = document.getElementById('usthad-menu-group');
 
       const adminNoticeBox = document.getElementById('admin-notice-create');
       const foodAddSection = document.getElementById('food-add-section');
@@ -414,15 +474,20 @@
         loggedOutBox.classList.add('hidden');
         document.getElementById('user-display-email').innerText = currentSession.user.email;
         document.getElementById('user-display-role').innerText = currentUserPermissions.role === 'admin' ? 'Super Admin' : 'Usthad / Sub-Admin';
-        adminMenuGroup.classList.remove('hidden');
 
-        // Permissions check
         const isAdmin = currentUserPermissions.role === 'admin';
 
-        if(isAdmin || currentUserPermissions.can_attendance) btnStudents.classList.remove('hidden'); else btnStudents.classList.add('hidden');
-        if(isAdmin) btnTeachers.classList.remove('hidden'); else btnTeachers.classList.add('hidden');
-        if(isAdmin || currentUserPermissions.can_fees) btnFees.classList.remove('hidden'); else btnFees.classList.add('hidden');
-        if(isAdmin) btnRoles.classList.remove('hidden'); else btnRoles.classList.add('hidden');
+        if(isAdmin) {
+          adminMenuGroup.classList.remove('hidden');
+        } else {
+          adminMenuGroup.classList.add('hidden');
+        }
+
+        if(isAdmin || currentUserPermissions.can_attendance) {
+          usthadMenuGroup.classList.remove('hidden');
+        } else {
+          usthadMenuGroup.classList.add('hidden');
+        }
 
         if(isAdmin || currentUserPermissions.can_notices) adminNoticeBox.classList.remove('hidden'); else adminNoticeBox.classList.add('hidden');
         if(isAdmin || currentUserPermissions.can_food) {
@@ -436,16 +501,16 @@
         loggedInBox.classList.add('hidden');
         loggedOutBox.classList.remove('hidden');
         adminMenuGroup.classList.add('hidden');
+        usthadMenuGroup.classList.add('hidden');
         adminNoticeBox.classList.add('hidden');
         foodAddSection.classList.add('hidden');
         adminElements.forEach(el => el.classList.add('hidden'));
       }
     }
 
-    // --- NAVIGATION ---
     function switchTab(tabId) {
       currentTab = tabId;
-      const allTabs = ['notices', 'parents', 'food', 'dashboard', 'students', 'teachers', 'fees', 'roles'];
+      const allTabs = ['notices', 'parents', 'food', 'attendance', 'students-dir', 'dashboard', 'teachers', 'fees', 'roles'];
       allTabs.forEach(id => {
         const el = document.getElementById(`tab-${id}`);
         const btn = document.getElementById(`btn-${id}`);
@@ -468,8 +533,9 @@
         notices: "Notice Board",
         parents: "Parent Portal",
         food: "Food Schedule & Reminders",
+        attendance: "Daily Attendance Register",
+        'students-dir': "Students Directory (Admin)",
         dashboard: "Dashboard",
-        students: "Students & Attendance",
         teachers: "Teachers",
         fees: "Fee Management",
         roles: "Staff Permissions"
@@ -490,14 +556,14 @@
     function loadTabData(tabId) {
       if(tabId === 'notices') loadNotices();
       if(tabId === 'food') loadFoodSchedule();
+      if(tabId === 'attendance') loadAttendanceTab();
+      if(tabId === 'students-dir') loadStudentsDirectory();
       if(tabId === 'dashboard') loadDashboardStats();
-      if(tabId === 'students') loadStudents();
       if(tabId === 'teachers') loadTeachers();
-      if(tabId === 'fees') { loadStudents(); loadFees(); }
+      if(tabId === 'fees') { loadStudentsListCache(); loadFees(); }
       if(tabId === 'roles') loadStaffRoles();
     }
 
-    // --- AUTH LOGIN / LOGOUT ---
     function openLoginModal() { document.getElementById('login-modal').classList.remove('hidden'); document.getElementById('login-modal').classList.add('flex'); }
     function closeLoginModal() { document.getElementById('login-modal').classList.add('hidden'); document.getElementById('login-modal').classList.remove('flex'); }
 
@@ -512,7 +578,7 @@
       btn.innerText = "Checking...";
       btn.disabled = true;
 
-      const { data, error } = await db.auth.signInWithPassword({ email, password });
+      const { error } = await db.auth.signInWithPassword({ email, password });
       btn.disabled = false;
       btn.innerText = "Sign In";
 
@@ -523,7 +589,11 @@
         closeLoginModal();
         e.target.reset();
         await fetchUserPermissions();
-        switchTab('dashboard');
+        if(currentUserPermissions && currentUserPermissions.role === 'admin') {
+          switchTab('dashboard');
+        } else {
+          switchTab('attendance');
+        }
       }
     }
 
@@ -534,7 +604,172 @@
       switchTab('notices');
     }
 
-    // --- 1. NOTICES ---
+    // --- 1. DAILY ATTENDANCE (USTHAD VIEW) ---
+    async function loadAttendanceTab() {
+      await loadStudentsListCache();
+      const tbody = document.getElementById('attendance-table-body');
+      tbody.innerHTML = '';
+
+      if(cachedStudents.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-500">വിദ്യാർത്ഥികളെ ചേർത്തിട്ടില്ല.</td></tr>`;
+        return;
+      }
+
+      cachedStudents.forEach(s => {
+        tbody.innerHTML += `
+          <tr class="border-b hover:bg-gray-50">
+            <td class="p-2.5 border-r font-mono font-bold">#${s.id}</td>
+            <td class="p-2.5 border-r font-medium">${s.name}</td>
+            <td class="p-2.5 border-r font-bold">${s.class}</td>
+            <td class="p-2.5 text-center space-x-1 sm:space-x-2">
+              <button onclick="markAttendance(${s.id}, 'present')" id="att-p-${s.id}" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 text-xs font-bold">Present</button>
+              <button onclick="markAttendance(${s.id}, 'absent')" id="att-a-${s.id}" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1 text-xs font-bold">Absent</button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    async function markAttendance(studentId, status) {
+      const today = new Date().toISOString().split('T')[0];
+      const { error } = await db.from('attendance').insert([{ student_id: studentId, date: today, status }]);
+      if(error) alert(error.message);
+      else {
+        const pBtn = document.getElementById(`att-p-${studentId}`);
+        const aBtn = document.getElementById(`att-a-${studentId}`);
+        if(status === 'present') {
+          if(pBtn) pBtn.className = "bg-emerald-800 ring-2 ring-emerald-400 text-white px-3 py-1 text-xs font-bold";
+          if(aBtn) aBtn.className = "bg-gray-300 text-gray-600 px-3 py-1 text-xs font-bold";
+        } else {
+          if(aBtn) aBtn.className = "bg-rose-800 ring-2 ring-rose-400 text-white px-3 py-1 text-xs font-bold";
+          if(pBtn) pBtn.className = "bg-gray-300 text-gray-600 px-3 py-1 text-xs font-bold";
+        }
+      }
+    }
+
+    // MARK ALL PRESENT (ഓൾ ടിക്ക്)
+    async function markAllStudentsPresent() {
+      if(cachedStudents.length === 0) return;
+      if(!confirm("മുഴുവൻ കുട്ടികൾക്കും ഇന്നത്തെ ഹാജർ (Present) രേഖപ്പെടുത്തണോ?")) return;
+
+      const today = new Date().toISOString().split('T')[0];
+      const records = cachedStudents.map(s => ({
+        student_id: s.id,
+        date: today,
+        status: 'present'
+      }));
+
+      const { error } = await db.from('attendance').insert(records);
+      if(error) alert("Error: " + error.message);
+      else {
+        alert("മുഴുവൻ കുട്ടികൾക്കും ഹാജർ രേഖപ്പെടുത്തി കഴിഞ്ഞു. ലീവായ കുട്ടികളുടെ പേരിനു നേരെയുള്ള 'Absent' ബട്ടൺ മാത്രം അമർത്തുക.");
+        cachedStudents.forEach(s => {
+          const pBtn = document.getElementById(`att-p-${s.id}`);
+          const aBtn = document.getElementById(`att-a-${s.id}`);
+          if(pBtn) pBtn.className = "bg-emerald-800 ring-2 ring-emerald-400 text-white px-3 py-1 text-xs font-bold";
+          if(aBtn) aBtn.className = "bg-gray-300 text-gray-600 px-3 py-1 text-xs font-bold";
+        });
+      }
+    }
+
+    // --- 2. STUDENTS DIRECTORY (ADMIN ONLY: EDIT / DELETE) ---
+    async function loadStudentsDirectory() {
+      await loadStudentsListCache();
+      document.getElementById('dir-student-count').innerText = cachedStudents.length;
+      const tbody = document.getElementById('students-directory-body');
+      tbody.innerHTML = '';
+
+      if(cachedStudents.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">കുട്ടികളെ ചേർത്തിട്ടില്ല.</td></tr>`;
+        return;
+      }
+
+      cachedStudents.forEach(s => {
+        tbody.innerHTML += `
+          <tr class="border-b hover:bg-gray-50">
+            <td class="p-2.5 border-r font-mono font-bold">#${s.id}</td>
+            <td class="p-2.5 border-r font-medium">${s.name}</td>
+            <td class="p-2.5 border-r">${s.class}</td>
+            <td class="p-2.5 border-r font-mono">${s.phone}</td>
+            <td class="p-2.5 text-center">
+              <button onclick="openStudentEditModal(${s.id})" class="text-blue-600 font-bold hover:underline text-xs">Edit / Delete</button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    async function loadStudentsListCache() {
+      const { data } = await db.from('students').select('*').order('id', { ascending: false });
+      cachedStudents = data || [];
+      const feeSelect = document.getElementById('fee-student-select');
+      if(feeSelect) {
+        feeSelect.innerHTML = '<option value="">Select Student</option>';
+        cachedStudents.forEach(s => {
+          feeSelect.innerHTML += `<option value="${s.id}">${s.name} (${s.class})</option>`;
+        });
+      }
+    }
+
+    async function addStudent(e) {
+      e.preventDefault();
+      const { error } = await db.from('students').insert([{
+        name: document.getElementById('stu-name').value,
+        class: document.getElementById('stu-class').value,
+        phone: document.getElementById('stu-phone').value
+      }]);
+      if(error) alert(error.message);
+      else {
+        alert("Student Added!");
+        e.target.reset();
+        loadStudentsDirectory();
+      }
+    }
+
+    function openStudentEditModal(id) {
+      const s = cachedStudents.find(x => x.id === id);
+      if(!s) return;
+      document.getElementById('edit-stu-id').value = s.id;
+      document.getElementById('edit-stu-name').value = s.name;
+      document.getElementById('edit-stu-class').value = s.class;
+      document.getElementById('edit-stu-phone').value = s.phone;
+      document.getElementById('student-edit-modal').classList.remove('hidden');
+      document.getElementById('student-edit-modal').classList.add('flex');
+    }
+
+    function closeStudentEditModal() {
+      document.getElementById('student-edit-modal').classList.add('hidden');
+      document.getElementById('student-edit-modal').classList.remove('flex');
+    }
+
+    async function saveEditedStudent(e) {
+      e.preventDefault();
+      const id = document.getElementById('edit-stu-id').value;
+      const { error } = await db.from('students').update({
+        name: document.getElementById('edit-stu-name').value,
+        class: document.getElementById('edit-stu-class').value,
+        phone: document.getElementById('edit-stu-phone').value
+      }).eq('id', id);
+
+      if(error) alert("Error: " + error.message);
+      else {
+        closeStudentEditModal();
+        loadStudentsDirectory();
+      }
+    }
+
+    async function deleteStudent() {
+      if(!confirm("ഈ വിദ്യാർത്ഥിയുടെ വിവരങ്ങൾ പൂർണ്ണമായും ഡിലീറ്റ് ചെയ്യണോ?")) return;
+      const id = document.getElementById('edit-stu-id').value;
+      const { error } = await db.from('students').delete().eq('id', id);
+      if(error) alert("Error: " + error.message);
+      else {
+        closeStudentEditModal();
+        loadStudentsDirectory();
+      }
+    }
+
+    // --- 3. NOTICES ---
     async function loadNotices() {
       const { data } = await db.from('notices').select('*').order('id', { ascending: false });
       const container = document.getElementById('notices-list');
@@ -564,13 +799,13 @@
       const { error } = await db.from('notices').insert([{ title, message }]);
       if(error) alert("Error: " + error.message);
       else {
-        alert("Notice published successfully!");
+        alert("Notice published!");
         e.target.reset();
         loadNotices();
       }
     }
 
-    // --- 2. PARENT PORTAL SEARCH (ഫോൺ നമ്പർ വഴി ലളിതമായി) ---
+    // --- 4. PARENT PORTAL SEARCH ---
     async function searchParentData(e) {
       e.preventDefault();
       const phoneInput = document.getElementById('parent-search-phone').value.trim();
@@ -583,11 +818,10 @@
       studentCards.innerHTML = '<p class="text-xs text-gray-500">Searching records...</p>';
       foodCard.classList.add('hidden');
 
-      // 1. ഫിൽട്ടർ സ്റ്റുഡന്റ്സ്
       const { data: students } = await db.from('students').select('*').eq('phone', phoneInput);
 
       if(!students || students.length === 0) {
-        studentCards.innerHTML = `<p class="text-xs text-rose-600 font-bold p-3 bg-rose-50 border border-rose-200">ഈ ഫോൺ നമ്പറിൽ കുട്ടികളുടെ വിവരങ്ങൾ കണ്ടെത്തിയില്ല. ദയവായി മദ്റസയിൽ നൽകിയ ഫോൺ നമ്പർ തന്നെ നൽകുക.</p>`;
+        studentCards.innerHTML = `<p class="text-xs text-rose-600 font-bold p-3 bg-rose-50 border border-rose-200">ഈ നമ്പറിൽ കുട്ടികളുടെ വിവരങ്ങൾ കണ്ടെത്തിയില്ല.</p>`;
       } else {
         studentCards.innerHTML = '';
         for(let stu of students) {
@@ -598,8 +832,8 @@
           const { data: fees } = await db.from('fee_payments').select('*').eq('student_id', stu.id).order('id', { ascending: false });
 
           let feeHtml = fees && fees.length > 0 
-            ? fees.map(f => `<span class="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 font-bold mr-1">${f.month}: ₹${f.amount} (Paid)</span>`).join(' ')
-            : '<span class="text-xs text-gray-400">ഫീസ് അടവ് വിവരങ്ങൾ ഇല്ല</span>';
+            ? fees.map(f => `<span class="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 font-bold mr-1">${f.month}: ₹${f.amount}</span>`).join(' ')
+            : '<span class="text-xs text-gray-400">ഫീസ് വിവരങ്ങൾ ഇല്ല</span>';
 
           studentCards.innerHTML += `
             <div class="bg-white border border-gray-300 p-4 border-t-4 border-t-blue-600 shadow-sm space-y-2">
@@ -620,7 +854,6 @@
         }
       }
 
-      // 2. ഫുഡ് ഷെഡ്യൂൾ
       const { data: foodRoutines } = await db.from('food_routine').select('*').eq('phone', phoneInput);
       if(foodRoutines && foodRoutines.length > 0) {
         foodCard.classList.remove('hidden');
@@ -635,7 +868,7 @@
       }
     }
 
-    // --- 3. FOOD SCHEDULE ---
+    // --- 5. FOOD SCHEDULE ---
     async function loadFoodSchedule() {
       const { data } = await db.from('food_routine').select('*').order('house_no', { ascending: true });
       foodDataList = data || [];
@@ -748,100 +981,7 @@
       else { alert("House added!"); e.target.reset(); loadFoodSchedule(); }
     }
 
-    // --- 4. STAFF ROLES MANAGEMENT (SUPER ADMIN) ---
-    async function loadStaffRoles() {
-      const { data } = await db.from('staff_roles').select('*').order('id', { ascending: true });
-      const tbody = document.getElementById('roles-table-body');
-      tbody.innerHTML = '';
-      (data || []).forEach(r => {
-        tbody.innerHTML += `
-          <tr class="border-b">
-            <td class="p-2 border-r font-medium">${r.email}</td>
-            <td class="p-2 border-r font-bold uppercase text-[10px]">${r.role}</td>
-            <td class="p-2 border-r text-center">${r.can_attendance ? '✅' : '❌'}</td>
-            <td class="p-2 border-r text-center">${r.can_fees ? '✅' : '❌'}</td>
-            <td class="p-2 border-r text-center">${r.can_food ? '✅' : '❌'}</td>
-            <td class="p-2 border-r text-center">${r.can_notices ? '✅' : '❌'}</td>
-            <td class="p-2 text-center">
-              ${r.email !== currentSession.user.email ? `<button onclick="deleteStaffRole(${r.id})" class="text-rose-600 font-bold hover:underline">Delete</button>` : '<span class="text-gray-400">Owner</span>'}
-            </td>
-          </tr>
-        `;
-      });
-    }
-
-    async function addStaffRole(e) {
-      e.preventDefault();
-      const email = document.getElementById('role-email').value.trim();
-      const role = document.getElementById('role-type').value;
-      const can_attendance = document.getElementById('perm-att').checked;
-      const can_fees = document.getElementById('perm-fees').checked;
-      const can_food = document.getElementById('perm-food').checked;
-      const can_notices = document.getElementById('perm-notices').checked;
-
-      const { error } = await db.from('staff_roles').upsert([{
-        email, role, can_attendance, can_fees, can_food, can_notices
-      }], { onConflict: 'email' });
-
-      if(error) alert("Error: " + error.message);
-      else {
-        alert("Staff permissions updated!");
-        e.target.reset();
-        loadStaffRoles();
-      }
-    }
-
-    async function deleteStaffRole(id) {
-      if(!confirm("Remove permissions for this staff member?")) return;
-      const { error } = await db.from('staff_roles').delete().eq('id', id);
-      if(error) alert(error.message);
-      else loadStaffRoles();
-    }
-
-    // --- 5. STUDENTS, TEACHERS, FEES & STATS ---
-    async function loadStudents() {
-      const { data } = await db.from('students').select('*').order('id', { ascending: false });
-      const tbody = document.getElementById('students-table-body');
-      const feeSelect = document.getElementById('fee-student-select');
-      if(tbody) tbody.innerHTML = '';
-      if(feeSelect) feeSelect.innerHTML = '<option value="">Select Student</option>';
-
-      (data || []).forEach(s => {
-        if(tbody) {
-          tbody.innerHTML += `
-            <tr class="border-b">
-              <td class="p-2 border-r font-mono">#${s.id}</td>
-              <td class="p-2 border-r font-medium">${s.name}</td>
-              <td class="p-2 border-r">${s.class}</td>
-              <td class="p-2 text-center space-x-1">
-                <button onclick="markAttendance(${s.id}, 'present')" class="bg-emerald-600 text-white px-2 py-0.5 text-[10px] font-bold">Present</button>
-                <button onclick="markAttendance(${s.id}, 'absent')" class="bg-rose-600 text-white px-2 py-0.5 text-[10px] font-bold">Absent</button>
-              </td>
-            </tr>
-          `;
-        }
-        if(feeSelect) feeSelect.innerHTML += `<option value="${s.id}">${s.name} (${s.class})</option>`;
-      });
-    }
-
-    async function addStudent(e) {
-      e.preventDefault();
-      const { error } = await db.from('students').insert([{
-        name: document.getElementById('stu-name').value,
-        class: document.getElementById('stu-class').value,
-        phone: document.getElementById('stu-phone').value
-      }]);
-      if(error) alert(error.message);
-      else { alert("Student Added!"); e.target.reset(); loadStudents(); }
-    }
-
-    async function markAttendance(studentId, status) {
-      const today = new Date().toISOString().split('T')[0];
-      const { error } = await db.from('attendance').insert([{ student_id: studentId, date: today, status }]);
-      if(error) alert(error.message);
-      else alert(`Marked: ${status}`);
-    }
-
+    // --- 6. TEACHERS & FEES ---
     async function loadTeachers() {
       const { data } = await db.from('teachers').select('*').order('id', { ascending: false });
       const tbody = document.getElementById('teachers-table-body');
@@ -907,6 +1047,52 @@
       const msg = encodeURIComponent(`അസ്സലാമു അലൈകും,
 വിദ്യാർത്ഥി ${name}-ന്റെ ${month} മാസത്തെ മദ്റസ ഫീസ് (₹${amount}) ലഭിച്ചിരിക്കുന്നു. നന്ദി.`);
       window.open(`https://wa.me/91${phone}?text=${msg}`, '_blank');
+    }
+
+    // --- 7. STAFF ROLES MANAGEMENT ---
+    async function loadStaffRoles() {
+      const { data } = await db.from('staff_roles').select('*').order('id', { ascending: true });
+      const tbody = document.getElementById('roles-table-body');
+      tbody.innerHTML = '';
+      (data || []).forEach(r => {
+        tbody.innerHTML += `
+          <tr class="border-b">
+            <td class="p-2 border-r font-medium">${r.email}</td>
+            <td class="p-2 border-r font-bold uppercase text-[10px]">${r.role}</td>
+            <td class="p-2 border-r text-center">${r.can_attendance ? '✅' : '❌'}</td>
+            <td class="p-2 border-r text-center">${r.can_fees ? '✅' : '❌'}</td>
+            <td class="p-2 border-r text-center">${r.can_food ? '✅' : '❌'}</td>
+            <td class="p-2 border-r text-center">${r.can_notices ? '✅' : '❌'}</td>
+            <td class="p-2 text-center">
+              ${r.email !== currentSession.user.email ? `<button onclick="deleteStaffRole(${r.id})" class="text-rose-600 font-bold hover:underline">Delete</button>` : '<span class="text-gray-400">Owner</span>'}
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    async function addStaffRole(e) {
+      e.preventDefault();
+      const email = document.getElementById('role-email').value.trim();
+      const role = document.getElementById('role-type').value;
+      const can_attendance = document.getElementById('perm-att').checked;
+      const can_fees = document.getElementById('perm-fees').checked;
+      const can_food = document.getElementById('perm-food').checked;
+      const can_notices = document.getElementById('perm-notices').checked;
+
+      const { error } = await db.from('staff_roles').upsert([{
+        email, role, can_attendance, can_fees, can_food, can_notices
+      }], { onConflict: 'email' });
+
+      if(error) alert("Error: " + error.message);
+      else { alert("Staff permissions updated!"); e.target.reset(); loadStaffRoles(); }
+    }
+
+    async function deleteStaffRole(id) {
+      if(!confirm("Remove permissions for this staff member?")) return;
+      const { error } = await db.from('staff_roles').delete().eq('id', id);
+      if(error) alert(error.message);
+      else loadStaffRoles();
     }
 
     async function loadDashboardStats() {
