@@ -212,35 +212,33 @@
         </div>
       </section>
 
-      <!-- ================= DAILY ATTENDANCE ================= -->
-      <section id="tab-attendance" class="hidden space-y-4">
-        <div class="bg-white border border-gray-300 p-4 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 class="text-xs sm:text-sm font-bold uppercase text-gray-900">Daily Attendance Register</h2>
-            <p class="text-[11px] text-gray-500">Date: <b id="att-current-date"></b></p>
-          </div>
-          <button onclick="markAllStudentsPresent()" class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-4 py-2 text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
-            Mark All Present (എല്ലാവരും ഹാജർ)
-          </button>
-        </div>
+    <!-- ================= DAILY ATTENDANCE ================= -->
+<section id="tab-attendance" class="space-y-3">
+  <div class="bg-white border border-gray-300 p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+    <div>
+      <h2 class="text-xs sm:text-sm font-bold uppercase text-gray-900">Daily Attendance Register</h2>
+      <p class="text-[11px] text-gray-500">Date: <b id="att-current-date"></b></p>
+    </div>
+    <button onclick="markAllStudentsPresent()" class="w-full sm:w-auto bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-3 py-2 text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-sm">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+      Mark All Present
+    </button>
+  </div>
 
-        <div class="bg-white border border-gray-300">
-          <div class="overflow-x-auto table-scroll">
-            <table class="w-full text-left text-xs whitespace-nowrap">
-              <thead class="bg-gray-100 border-b uppercase text-[10px]">
-                <tr>
-                  <th class="p-2.5 border-r">ID</th>
-                  <th class="p-2.5 border-r">Name</th>
-                  <th class="p-2.5 border-r">Class</th>
-                  <th class="p-2.5 text-center">Mark Attendance</th>
-                </tr>
-              </thead>
-              <tbody id="attendance-table-body"></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
+  <div class="bg-white border border-gray-300 overflow-hidden shadow-sm">
+    <table class="w-full text-left text-xs table-fixed">
+      <thead class="bg-gray-100 border-b uppercase text-[10px]">
+        <tr>
+          <th class="p-2 border-r w-10 text-center">ID</th>
+          <th class="p-2 border-r">Name</th>
+          <th class="p-2 border-r w-14 text-center">Class</th>
+          <th class="p-2 w-16 text-center">Status</th>
+        </tr>
+      </thead>
+      <tbody id="attendance-table-body"></tbody>
+    </table>
+  </div>
+</section>
 
       <!-- ================= STUDENTS DIRECTORY (ADMIN ONLY) ================= -->
       <section id="tab-students-dir" class="hidden space-y-4">
@@ -753,68 +751,82 @@
       if(tabId === 'roles') loadStaffRoles();
     }
 
-    // --- DAILY ATTENDANCE ---
-    async function loadAttendanceTab() {
-      await loadStudentsListCache();
-      const tbody = document.getElementById('attendance-table-body');
-      tbody.innerHTML = '';
+    // --- DAILY ATTENDANCE WITH CHECKBOX ---
+async function loadAttendanceTab() {
+  await loadStudentsListCache();
+  const tbody = document.getElementById('attendance-table-body');
+  tbody.innerHTML = '';
 
-      if(cachedStudents.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-500">കുട്ടികളെ ചേർത്തിട്ടില്ല.</td></tr>`;
-        return;
-      }
+  if (cachedStudents.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-500">Kuttikale cherthittilla.</td></tr>`;
+    return;
+  }
 
-      cachedStudents.forEach(s => {
-        tbody.innerHTML += `
-          <tr class="border-b hover:bg-gray-50">
-            <td class="p-2.5 border-r font-mono font-bold">#${s.id}</td>
-            <td class="p-2.5 border-r font-medium">${s.name}</td>
-            <td class="p-2.5 border-r font-bold">${s.class}</td>
-            <td class="p-2.5 text-center space-x-1 sm:space-x-2">
-              <button onclick="markAttendance(${s.id}, 'present')" id="att-p-${s.id}" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 text-xs font-bold">Present</button>
-              <button onclick="markAttendance(${s.id}, 'absent')" id="att-a-${s.id}" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1 text-xs font-bold">Absent</button>
-            </td>
-          </tr>
-        `;
-      });
-    }
+  const today = new Date().toISOString().split('T')[0];
+  const { data: todayAtt } = await db.from('attendance').select('*').eq('date', today);
+  const attMap = {};
+  (todayAtt || []).forEach(a => {
+    attMap[a.student_id] = a.status;
+  });
 
-    async function markAttendance(studentId, status) {
-      const today = new Date().toISOString().split('T')[0];
-      const { error } = await db.from('attendance').insert([{ student_id: studentId, date: today, status }]);
-      if(error) alert(error.message);
-      else {
-        const pBtn = document.getElementById(`att-p-${studentId}`);
-        const aBtn = document.getElementById(`att-a-${studentId}`);
-        if(status === 'present') {
-          if(pBtn) pBtn.className = "bg-emerald-800 ring-2 ring-emerald-400 text-white px-3 py-1 text-xs font-bold";
-          if(aBtn) aBtn.className = "bg-gray-300 text-gray-600 px-3 py-1 text-xs font-bold";
-        } else {
-          if(aBtn) aBtn.className = "bg-rose-800 ring-2 ring-rose-400 text-white px-3 py-1 text-xs font-bold";
-          if(pBtn) pBtn.className = "bg-gray-300 text-gray-600 px-3 py-1 text-xs font-bold";
-        }
-      }
-    }
+  cachedStudents.forEach(s => {
+    const isPresent = attMap[s.id] === 'present';
+    tbody.innerHTML += `
+      <tr class="border-b hover:bg-gray-50">
+        <td class="p-2 border-r text-center font-mono font-bold text-gray-500 text-[11px]">#${s.id}</td>
+        <td class="p-2 border-r font-medium truncate">${s.name}</td>
+        <td class="p-2 border-r text-center font-bold text-[11px]">${s.class}</td>
+        <td class="p-2 text-center">
+          <input 
+            type="checkbox" 
+            id="att-check-${s.id}" 
+            onchange="toggleAttendanceCheckbox(${s.id}, this.checked)"
+            ${isPresent ? 'checked' : ''} 
+            class="w-5 h-5 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500 cursor-pointer accent-emerald-600 align-middle">
+        </td>
+      </tr>
+    `;
+  });
+}
 
-    async function markAllStudentsPresent() {
-      if(cachedStudents.length === 0) return;
-      if(!confirm("മുഴുവൻ കുട്ടികൾക്കും ഇന്നത്തെ ഹാജർ (Present) നൽകണോ?")) return;
+async function toggleAttendanceCheckbox(studentId, isChecked) {
+  const status = isChecked ? 'present' : 'absent';
+  const today = new Date().toISOString().split('T')[0];
 
-      const today = new Date().toISOString().split('T')[0];
-      const records = cachedStudents.map(s => ({ student_id: s.id, date: today, status: 'present' }));
+  const { error } = await db.from('attendance').upsert(
+    [{ student_id: studentId, date: today, status: status }],
+    { onConflict: 'student_id,date' }
+  );
 
-      const { error } = await db.from('attendance').insert(records);
-      if(error) alert("Error: " + error.message);
-      else {
-        alert("ഹാജർ രേഖപ്പെടുത്തി കഴിഞ്ഞു!");
-        cachedStudents.forEach(s => {
-          const pBtn = document.getElementById(`att-p-${s.id}`);
-          const aBtn = document.getElementById(`att-a-${s.id}`);
-          if(pBtn) pBtn.className = "bg-emerald-800 ring-2 ring-emerald-400 text-white px-3 py-1 text-xs font-bold";
-          if(aBtn) aBtn.className = "bg-gray-300 text-gray-600 px-3 py-1 text-xs font-bold";
-        });
-      }
-    }
+  if (error) {
+    alert("Error: " + error.message);
+    document.getElementById(`att-check-${studentId}`).checked = !isChecked;
+  }
+}
+
+async function markAllStudentsPresent() {
+  if (cachedStudents.length === 0) return;
+  if (!confirm("Muzhuvan kuttikalkkum innathe hajar (Present) nalkano?")) return;
+
+  const today = new Date().toISOString().split('T')[0];
+  const records = cachedStudents.map(s => ({
+    student_id: s.id,
+    date: today,
+    status: 'present'
+  }));
+
+  const { error } = await db.from('attendance').upsert(records, { onConflict: 'student_id,date' });
+
+  if (error) {
+    alert("Error: " + error.message);
+  } else {
+    alert("Muzhuvan kuttikaludeyum hajar rekhappeduthi!");
+    cachedStudents.forEach(s => {
+      const box = document.getElementById(`att-check-${s.id}`);
+      if (box) box.checked = true;
+    });
+  }
+}
 
     // --- STUDENTS DIRECTORY ---
     async function loadStudentsDirectory() {
