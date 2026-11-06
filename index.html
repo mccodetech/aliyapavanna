@@ -403,48 +403,56 @@
       </section>
 
     
-      <!-- ================= STAFF ROLES ================= -->
-      <section id="tab-roles" class="hidden space-y-4">
-        <div class="bg-white border border-gray-300 p-4">
-          <h2 class="text-xs font-bold uppercase mb-3 border-b pb-2">Add Sub-Admin / Usthad Permissions</h2>
-          <form onsubmit="addStaffRole(event)" class="space-y-3">
-            <div class="grid sm:grid-cols-2 gap-3">
-              <input type="email" id="role-email" placeholder="Usthad Supabase Email" required class="w-full border p-2 text-xs">
-              <select id="role-type" class="w-full border p-2 text-xs bg-white">
-                <option value="usthad">Usthad (Sub-Admin)</option>
-                <option value="admin">Full Admin</option>
-              </select>
-            </div>
-            <div class="flex flex-wrap gap-4 text-xs font-medium pt-1">
-              <label class="flex items-center gap-1.5"><input type="checkbox" id="perm-att" checked> Attendance Mark</label>
-              <label class="flex items-center gap-1.5"><input type="checkbox" id="perm-fees"> Fees Management</label>
-              <label class="flex items-center gap-1.5"><input type="checkbox" id="perm-food"> Food Routine Edit</label>
-              <label class="flex items-center gap-1.5"><input type="checkbox" id="perm-notices" checked> Notice Publish</label>
-            </div>
-            <button type="submit" class="bg-slate-900 text-white font-bold py-2 px-4 text-xs uppercase">Save Permission</button>
-          </form>
-        </div>
+     <!-- ================= STAFF ROLES ================= -->
+<section id="tab-roles" class="hidden space-y-4">
+  <div class="bg-white border border-gray-300 p-4">
+    <h2 class="text-xs font-bold uppercase mb-3 border-b pb-2">Add Sub-Admin / Usthad Permissions</h2>
+    <form onsubmit="addStaffRole(event)" class="space-y-3">
+      <div class="grid sm:grid-cols-3 gap-3">
+        <input type="email" id="role-email" placeholder="Usthad Supabase Email" required class="w-full border p-2 text-xs">
+        
+        <select id="role-type" class="w-full border p-2 text-xs bg-white">
+          <option value="usthad">Usthad (Sub-Admin)</option>
+          <option value="admin">Full Admin</option>
+        </select>
 
-        <div class="bg-white border border-gray-300">
-          <div class="p-3 border-b font-bold text-xs uppercase bg-gray-50">Staff & Roles List</div>
-          <div class="overflow-x-auto table-scroll">
-            <table class="w-full text-left text-xs whitespace-nowrap">
-              <thead class="bg-gray-100 border-b uppercase text-[10px]">
-                <tr>
-                  <th class="p-2 border-r">Email</th>
-                  <th class="p-2 border-r">Role</th>
-                  <th class="p-2 border-r text-center">Attendance</th>
-                  <th class="p-2 border-r text-center">Fees</th>
-                  <th class="p-2 border-r text-center">Food Edit</th>
-                  <th class="p-2 border-r text-center">Notices</th>
-                  <th class="p-2 text-center">Action</th>
-                </tr>
-              </thead>
-              <tbody id="roles-table-body"></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
+        <!-- Assigned Class Dropdown -->
+        <select id="role-class" class="w-full border p-2 text-xs bg-white font-semibold">
+          <option value="all">All Classes (മുഴുവൻ ക്ലാസുകളും)</option>
+        </select>
+      </div>
+
+      <div class="flex flex-wrap gap-4 text-xs font-medium pt-1">
+        <label class="flex items-center gap-1.5"><input type="checkbox" id="perm-att" checked> Attendance Mark</label>
+        <label class="flex items-center gap-1.5"><input type="checkbox" id="perm-fees"> Fees Management</label>
+        <label class="flex items-center gap-1.5"><input type="checkbox" id="perm-food"> Food Routine Edit</label>
+        <label class="flex items-center gap-1.5"><input type="checkbox" id="perm-notices" checked> Notice Publish</label>
+      </div>
+      <button type="submit" class="bg-slate-900 text-white font-bold py-2 px-4 text-xs uppercase">Save Permission</button>
+    </form>
+  </div>
+
+  <div class="bg-white border border-gray-300">
+    <div class="p-3 border-b font-bold text-xs uppercase bg-gray-50">Staff & Roles List</div>
+    <div class="overflow-x-auto table-scroll">
+      <table class="w-full text-left text-xs whitespace-nowrap">
+        <thead class="bg-gray-100 border-b uppercase text-[10px]">
+          <tr>
+            <th class="p-2 border-r">Email</th>
+            <th class="p-2 border-r">Role</th>
+            <th class="p-2 border-r text-center">Assigned Class</th>
+            <th class="p-2 border-r text-center">Attendance</th>
+            <th class="p-2 border-r text-center">Fees</th>
+            <th class="p-2 border-r text-center">Food Edit</th>
+            <th class="p-2 border-r text-center">Notices</th>
+            <th class="p-2 text-center">Action</th>
+          </tr>
+        </thead>
+        <tbody id="roles-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
 
     </main>
   </div>
@@ -774,7 +782,11 @@ async function loadAttendanceTab() {
     classFilter.innerHTML += `<option value="${c}">Class ${c}</option>`;
   });
   classFilter.value = currentSelected;
-
+// ഉസ്താദിന് പ്രത്യേകം ക്ലാസ് നൽകിയിട്ടുണ്ടെങ്കിൽ ആ ക്ലാസ് മാത്രം ഓട്ടോമാറ്റിക് ആയി സെലക്ട് ചെയ്യുന്നു
+  if (activeUser && activeUser.role === 'usthad' && activeUser.permissions && activeUser.permissions.assigned_class && activeUser.permissions.assigned_class !== 'all') {
+    classFilter.value = activeUser.permissions.assigned_class;
+  }
+  
   // 2. ഇന്നത്തെ ഹാജർ വിവരങ്ങൾ എടുക്കുന്നു
   const today = new Date().toISOString().split('T')[0];
   const { data: todayAtt } = await db.from('attendance').select('*').eq('date', today);
@@ -1204,48 +1216,75 @@ async function markAllStudentsPresent() {
       window.open(`https://wa.me/91${phone}?text=${msg}`, '_blank');
     }
 
-    // --- STAFF ROLES ---
-    async function loadStaffRoles() {
-      const { data } = await db.from('staff_roles').select('*').order('id', { ascending: true });
-      const tbody = document.getElementById('roles-table-body');
-      tbody.innerHTML = '';
-      (data || []).forEach(r => {
-        tbody.innerHTML += `
-          <tr class="border-b">
-            <td class="p-2 border-r font-medium">${r.email}</td>
-            <td class="p-2 border-r font-bold uppercase text-[10px]">${r.role}</td>
-            <td class="p-2 border-r text-center">${r.can_attendance ? '✅' : '❌'}</td>
-            <td class="p-2 border-r text-center">${r.can_fees ? '✅' : '❌'}</td>
-            <td class="p-2 border-r text-center">${r.can_food ? '✅' : '❌'}</td>
-            <td class="p-2 border-r text-center">${r.can_notices ? '✅' : '❌'}</td>
-            <td class="p-2 text-center">
-              <button onclick="deleteStaffRole(${r.id})" class="text-rose-600 font-bold hover:underline">Delete</button>
-            </td>
-          </tr>
-        `;
-      });
-    }
+   // --- LOAD STAFF ROLES & CLASSES ---
+async function loadStaffRoles() {
+  await loadStudentsListCache();
 
-    async function addStaffRole(e) {
-      if (e) e.preventDefault();
-      const email = document.getElementById('role-email').value.trim();
-      const role = document.getElementById('role-type').value;
-      const can_attendance = document.getElementById('perm-att').checked;
-      const can_fees = document.getElementById('perm-fees').checked;
-      const can_food = document.getElementById('perm-food').checked;
-      const can_notices = document.getElementById('perm-notices').checked;
+  // Student directory-ilulla unique classes dropdown-il dinamikaayi load cheyyunnu
+  const roleClassSelect = document.getElementById('role-class');
+  if (roleClassSelect) {
+    const uniqueClasses = [...new Set(cachedStudents.map(s => s.class))].filter(Boolean);
+    roleClassSelect.innerHTML = '<option value="all">All Classes (മുഴുവൻ ക്ലാസുകളും)</option>';
+    uniqueClasses.forEach(c => {
+      roleClassSelect.innerHTML += `<option value="${c}">Class ${c}</option>`;
+    });
+  }
 
-      const { error } = await db.from('staff_roles').upsert([{
-        email, role, can_attendance, can_fees, can_food, can_notices
-      }], { onConflict: 'email' });
+  const { data } = await db.from('staff_roles').select('*').order('id', { ascending: true });
+  const tbody = document.getElementById('roles-table-body');
+  tbody.innerHTML = '';
 
-      if(error) alert("Error: " + error.message);
-      else { 
-        alert("Staff permissions updated!"); 
-        document.getElementById('role-email').value = '';
-        loadStaffRoles(); 
-      }
-    }
+  (data || []).forEach(r => {
+    const classBadge = r.assigned_class && r.assigned_class !== 'all' 
+      ? `<span class="bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded text-[10px]">Class ${r.assigned_class}</span>` 
+      : `<span class="bg-gray-100 text-gray-700 font-bold px-2 py-0.5 rounded text-[10px]">All Classes</span>`;
+
+    tbody.innerHTML += `
+      <tr class="border-b">
+        <td class="p-2 border-r font-medium">${r.email}</td>
+        <td class="p-2 border-r font-bold uppercase text-[10px]">${r.role}</td>
+        <td class="p-2 border-r text-center">${classBadge}</td>
+        <td class="p-2 border-r text-center">${r.can_attendance ? '✅' : '❌'}</td>
+        <td class="p-2 border-r text-center">${r.can_fees ? '✅' : '❌'}</td>
+        <td class="p-2 border-r text-center">${r.can_food ? '✅' : '❌'}</td>
+        <td class="p-2 border-r text-center">${r.can_notices ? '✅' : '❌'}</td>
+        <td class="p-2 text-center">
+          <button onclick="deleteStaffRole(${r.id})" class="text-rose-600 font-bold hover:underline">Delete</button>
+        </td>
+      </tr>
+    `;
+  });
+}
+
+// --- SAVE / UPDATE PERMISSION WITH CLASS ---
+async function addStaffRole(e) {
+  if (e) e.preventDefault();
+  const email = document.getElementById('role-email').value.trim().toLowerCase();
+  const role = document.getElementById('role-type').value;
+  const assigned_class = document.getElementById('role-class').value;
+  const can_attendance = document.getElementById('perm-att').checked;
+  const can_fees = document.getElementById('perm-fees').checked;
+  const can_food = document.getElementById('perm-food').checked;
+  const can_notices = document.getElementById('perm-notices').checked;
+
+  const { error } = await db.from('staff_roles').upsert([{
+    email,
+    role,
+    assigned_class,
+    can_attendance,
+    can_fees,
+    can_food,
+    can_notices
+  }], { onConflict: 'email' });
+
+  if (error) {
+    alert("Error: " + error.message);
+  } else {
+    alert("Staff permissions & class updated!");
+    document.getElementById('role-email').value = '';
+    loadStaffRoles();
+  }
+}
 
     async function deleteStaffRole(id) {
       if(!confirm("Remove permissions?")) return;
