@@ -397,7 +397,7 @@
         </div>
       </section>
 
-      function onFeeStudentChange(studentId) {
+    function onFeeStudentChange(studentId) {
   const student = cachedStudents.find(s => s.id == studentId);
   const amountInput = document.getElementById('fee-amount');
   if (student) {
@@ -406,7 +406,6 @@
     amountInput.value = '';
   }
 }
-
       <!-- ================= STAFF ROLES ================= -->
       <section id="tab-roles" class="hidden space-y-4">
         <div class="bg-white border border-gray-300 p-4">
@@ -697,12 +696,13 @@
     }
 
     async function handlePortalLogout() {
-      if(activeUser && activeUser.type === 'staff') {
-        await db.auth.signOut();
-      }
-      activeUser = null;
-      document.getElementById('auth-gate').classList.remove('hidden');
-    }
+  if (activeUser && activeUser.type === 'staff') {
+    await db.auth.signOut();
+  }
+  localStorage.removeItem('madrasa_parent_phone');
+  activeUser = null;
+  document.getElementById('auth-gate').classList.remove('hidden');
+}
 
     function switchTab(tabId) {
       currentTab = tabId;
@@ -1217,6 +1217,33 @@
     const today = new Date().toISOString().split('T')[0];
     const attDateEl = document.getElementById('att-current-date');
     if(attDateEl) attDateEl.innerText = today;
+// --- AUTO RESTORE LOGIN SESSION ---
+window.addEventListener('DOMContentLoaded', async () => {
+  // 1. Staff / Admin session check cheyyunnu
+  const { data: { session } } = await db.auth.getSession();
+  if (session && session.user && session.user.email) {
+    await verifyStaffPermissions(session.user.email);
+    return;
+  }
+
+  // 2. Parent session check cheyyunnu (localStorage വഴി)
+  const savedParentPhone = localStorage.getItem('madrasa_parent_phone');
+  if (savedParentPhone) {
+    const { data } = await db.from('students').select('*').eq('phone', savedParentPhone);
+    if (data && data.length > 0) {
+      activeUser = {
+        type: 'parent',
+        phone: savedParentPhone,
+        studentsList: data
+      };
+      document.getElementById('auth-gate').classList.add('hidden');
+      setupPortalLayout();
+      renderParentProfile(data, savedParentPhone);
+      switchTab('parent-view');
+    }
+  }
+});
+    
   </script>
 </body>
 </html>
