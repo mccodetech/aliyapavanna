@@ -3,39 +3,65 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Madrasa Management System</title>
+  <title>Madrasa Management Portal</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     * { border-radius: 0px !important; }
-    .table-scroll {
-      -webkit-overflow-scrolling: touch;
-    }
+    .table-scroll { -webkit-overflow-scrolling: touch; }
   </style>
 </head>
 <body class="bg-gray-100 flex min-h-screen font-sans text-gray-800 antialiased">
 
-  <!-- ================= AUTHENTICATION MODAL / SCREEN ================= -->
-  <div id="auth-screen" class="fixed inset-0 bg-slate-900 z-[100] flex items-center justify-center p-4">
-    <div class="bg-white p-6 sm:p-8 w-full max-w-sm border border-gray-300 shadow-xl space-y-4">
-      <div class="border-b border-gray-200 pb-3 text-center">
-        <h2 class="text-lg font-bold uppercase tracking-wider text-slate-900">Madrasa Portal</h2>
-        <p class="text-xs text-gray-500 mt-1">Sign in with your email & password</p>
+  <!-- ================= 1. LOGIN MODAL (ADMIN / USTHAD) ================= -->
+  <div id="login-modal" class="fixed inset-0 bg-black/70 z-[100] hidden items-center justify-center p-4">
+    <div class="bg-white p-6 w-full max-w-sm border border-gray-300 shadow-xl space-y-3">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h3 class="font-bold text-sm uppercase text-gray-900">Staff / Admin Login</h3>
+        <button onclick="closeLoginModal()" class="text-gray-500 hover:text-black font-bold">✕</button>
       </div>
+      <form onsubmit="handleStaffLogin(event)" class="space-y-3">
+        <input type="email" id="login-email" placeholder="Email Address" required class="w-full border p-2 text-xs outline-none focus:border-blue-600">
+        <input type="password" id="login-password" placeholder="Password" required class="w-full border p-2 text-xs outline-none focus:border-blue-600">
+        <p id="login-error" class="text-xs text-rose-600 hidden font-semibold"></p>
+        <button type="submit" id="btn-login-submit" class="w-full bg-slate-900 text-white font-bold py-2 text-xs uppercase">Sign In</button>
+      </form>
+    </div>
+  </div>
 
-      <form id="auth-form" onsubmit="handleLogin(event)" class="space-y-3">
+  <!-- ================= 2. FOOD EDIT MODAL ================= -->
+  <div id="food-edit-modal" class="fixed inset-0 bg-black/70 z-[100] hidden items-center justify-center p-4">
+    <div class="bg-white p-5 w-full max-w-sm border border-gray-300 shadow-xl space-y-3">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h3 class="font-bold text-sm uppercase text-gray-900">Edit Food Routine</h3>
+        <button onclick="closeFoodEditModal()" class="text-gray-500 hover:text-black font-bold">✕</button>
+      </div>
+      <form onsubmit="saveEditedFood(event)" class="space-y-2.5">
+        <input type="hidden" id="edit-food-id">
         <div>
-          <label class="block text-[11px] font-bold uppercase text-gray-600 mb-1">Email</label>
-          <input type="email" id="auth-email" required placeholder="admin@madrasa.com" class="w-full border border-gray-300 p-2.5 text-xs sm:text-sm outline-none focus:border-blue-600">
+          <label class="block text-[10px] font-bold uppercase text-gray-600">House No</label>
+          <input type="number" id="edit-food-no" required class="w-full border p-2 text-xs">
         </div>
         <div>
-          <label class="block text-[11px] font-bold uppercase text-gray-600 mb-1">Password</label>
-          <input type="password" id="auth-password" required placeholder="••••••••" class="w-full border border-gray-300 p-2.5 text-xs sm:text-sm outline-none focus:border-blue-600">
+          <label class="block text-[10px] font-bold uppercase text-gray-600">Head of Family</label>
+          <input type="text" id="edit-food-name" required class="w-full border p-2 text-xs">
         </div>
-        <p id="auth-error" class="text-xs text-rose-600 hidden font-semibold"></p>
-        <button type="submit" id="auth-submit-btn" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 text-xs sm:text-sm uppercase tracking-wide">
-          Login
-        </button>
+        <div>
+          <label class="block text-[10px] font-bold uppercase text-gray-600">Phone</label>
+          <input type="tel" id="edit-food-phone" required class="w-full border p-2 text-xs">
+        </div>
+        <div>
+          <label class="block text-[10px] font-bold uppercase text-gray-600">Slot</label>
+          <select id="edit-food-slot" class="w-full border p-2 text-xs bg-white">
+            <option value="morning">Morning (രാവിലെ)</option>
+            <option value="noon">Noon (ഉച്ചയ്ക്ക്)</option>
+            <option value="night">Night (രാത്രി)</option>
+          </select>
+        </div>
+        <div class="flex gap-2 pt-2">
+          <button type="button" onclick="deleteFoodRoutine()" class="w-1/2 bg-rose-600 text-white font-bold py-2 text-xs uppercase">Delete</button>
+          <button type="submit" class="w-1/2 bg-blue-600 text-white font-bold py-2 text-xs uppercase">Save</button>
+        </div>
       </form>
     </div>
   </div>
@@ -46,199 +72,238 @@
   <!-- സൈഡ്‌ബാർ -->
   <aside id="sidebar" class="fixed top-0 bottom-0 left-0 w-64 bg-slate-950 text-white z-50 flex flex-col border-r border-slate-800 -translate-x-full md:translate-x-0 transition-transform duration-200">
     <div class="p-4 border-b border-slate-800 flex justify-between items-center">
-      <span id="txt-app-title" class="font-bold text-base tracking-wider text-slate-100">MADRASA PORTAL</span>
-      <button onclick="toggleSidebar()" class="md:hidden text-gray-400 hover:text-white p-1 text-lg">✕</button>
+      <span class="font-bold text-sm tracking-wider text-slate-100">MADRASA PORTAL</span>
+      <button onclick="toggleSidebar()" class="md:hidden text-gray-400 p-1 text-lg">✕</button>
     </div>
-    <nav class="p-2 space-y-1 flex-1 overflow-y-auto">
-      <button onclick="switchTab('dashboard')" id="btn-dashboard" class="w-full text-left px-3 py-3 text-sm font-semibold border-l-4 border-blue-500 bg-slate-800 text-blue-400">Dashboard</button>
-      <button onclick="switchTab('students')" id="btn-students" class="w-full text-left px-3 py-3 text-sm font-semibold border-l-4 border-transparent text-slate-300 hover:bg-slate-900">Students & Attendance</button>
-      <button onclick="switchTab('teachers')" id="btn-teachers" class="w-full text-left px-3 py-3 text-sm font-semibold border-l-4 border-transparent text-slate-300 hover:bg-slate-900">Teachers</button>
-      <button onclick="switchTab('fees')" id="btn-fees" class="w-full text-left px-3 py-3 text-sm font-semibold border-l-4 border-transparent text-slate-300 hover:bg-slate-900">Fee Management</button>
-      <button onclick="switchTab('food')" id="btn-food" class="w-full text-left px-3 py-3 text-sm font-semibold border-l-4 border-transparent text-slate-300 hover:bg-slate-900">Food Schedule (90 Houses)</button>
+    
+    <nav class="p-2 space-y-1 flex-1 overflow-y-auto text-xs sm:text-sm">
+      <button onclick="switchTab('notices')" id="btn-notices" class="w-full text-left px-3 py-2.5 font-semibold border-l-4 border-blue-500 bg-slate-800 text-blue-400">Notice Board (പൊതു അറിയിപ്പുകൾ)</button>
+      <button onclick="switchTab('parents')" id="btn-parents" class="w-full text-left px-3 py-2.5 font-semibold border-l-4 border-transparent text-slate-300 hover:bg-slate-900">Parent Portal (രക്ഷിതാക്കൾ)</button>
+      <button onclick="switchTab('food')" id="btn-food" class="w-full text-left px-3 py-2.5 font-semibold border-l-4 border-transparent text-slate-300 hover:bg-slate-900">Food Schedule (ഭക്ഷണം)</button>
+      
+      <!-- Staff & Admin ടാബുകൾ -->
+      <div id="admin-menu-group" class="pt-3 border-t border-slate-800 mt-2 space-y-1">
+        <p class="px-3 text-[10px] font-bold text-gray-500 uppercase">Management (Usthad / Admin)</p>
+        <button onclick="switchTab('dashboard')" id="btn-dashboard" class="w-full text-left px-3 py-2.5 font-semibold border-l-4 border-transparent text-slate-300 hover:bg-slate-900">Dashboard</button>
+        <button onclick="switchTab('students')" id="btn-students" class="w-full text-left px-3 py-2.5 font-semibold border-l-4 border-transparent text-slate-300 hover:bg-slate-900">Students & Attendance</button>
+        <button onclick="switchTab('teachers')" id="btn-teachers" class="w-full text-left px-3 py-2.5 font-semibold border-l-4 border-transparent text-slate-300 hover:bg-slate-900">Teachers</button>
+        <button onclick="switchTab('fees')" id="btn-fees" class="w-full text-left px-3 py-2.5 font-semibold border-l-4 border-transparent text-slate-300 hover:bg-slate-900">Fee Management</button>
+      </div>
     </nav>
 
-    <!-- യൂസർ വിവരങ്ങളും ലോഗൗട്ട് ബട്ടണും -->
+    <!-- താഴെയുള്ള Auth Status -->
     <div class="p-3 border-t border-slate-800 bg-slate-900/50">
-      <p id="user-display-email" class="text-[11px] text-gray-400 truncate mb-2">Not logged in</p>
-      <button onclick="handleLogout()" class="w-full bg-rose-700 hover:bg-rose-800 text-white font-bold py-1.5 px-3 text-xs uppercase tracking-wide">
-        Logout
-      </button>
+      <div id="auth-logged-in-box" class="hidden">
+        <p id="user-display-email" class="text-[11px] text-emerald-400 font-mono truncate mb-2"></p>
+        <button onclick="handleLogout()" class="w-full bg-rose-700 hover:bg-rose-800 text-white font-bold py-1.5 px-3 text-xs uppercase">Logout</button>
+      </div>
+      <div id="auth-logged-out-box">
+        <button onclick="openLoginModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-3 text-xs uppercase">Staff Login</button>
+      </div>
     </div>
   </aside>
 
   <!-- പ്രധാന കണ്ടന്റ് ഭാഗം -->
   <div class="flex-1 flex flex-col md:ml-64 w-full min-w-0">
-    
-    <!-- മൊബൈൽ ഫ്രണ്ട്‌ലി ഹെഡർ -->
-    <header class="bg-white border-b border-gray-300 px-3 py-3 sm:px-6 flex items-center justify-between gap-2 sticky top-0 z-30">
-      <div class="flex items-center gap-2 min-w-0">
-        <button onclick="toggleSidebar()" class="md:hidden p-2 text-gray-700 border border-gray-300 hover:bg-gray-50 flex-shrink-0" aria-label="Menu">
+    <header class="bg-white border-b border-gray-300 px-3 py-3 sm:px-6 flex items-center justify-between sticky top-0 z-30">
+      <div class="flex items-center gap-2">
+        <button onclick="toggleSidebar()" class="md:hidden p-2 text-gray-700 border border-gray-300">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
         </button>
-        <h1 id="page-title" class="text-xs sm:text-base font-bold uppercase tracking-tight text-gray-900 truncate">Dashboard</h1>
-      </div>
-      
-      <div class="flex items-center gap-2 flex-shrink-0">
-        <div class="border border-gray-300 bg-gray-50 flex text-[11px] font-bold">
-          <button id="lang-btn-en" onclick="setLanguage('en')" class="px-2 py-1 bg-slate-900 text-white">EN</button>
-          <button id="lang-btn-ml" onclick="setLanguage('ml')" class="px-2 py-1 text-gray-700 hover:bg-gray-200">മലയാളം</button>
-        </div>
+        <h1 id="page-title" class="text-xs sm:text-base font-bold uppercase tracking-tight text-gray-900">Notice Board</h1>
       </div>
     </header>
 
-    <!-- മെയിൻ പേജ് സ്ക്രോൾ ഏരിയ -->
-    <main class="p-3 sm:p-6 space-y-4 sm:space-y-6 overflow-x-hidden">
-      
-      <!-- 1. ഡാഷ്‌ബോർഡ് -->
-      <section id="tab-dashboard" class="space-y-4">
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <div class="bg-white border border-gray-300 border-l-4 border-l-blue-600 p-3 sm:p-5">
-            <p id="lbl-total-students" class="text-[10px] sm:text-xs uppercase font-bold text-gray-500">Total Students</p>
-            <p id="stat-students-count" class="text-xl sm:text-3xl font-extrabold text-gray-900 mt-1">0</p>
-          </div>
-          <div class="bg-white border border-gray-300 border-l-4 border-l-purple-600 p-3 sm:p-5">
-            <p id="lbl-total-teachers" class="text-[10px] sm:text-xs uppercase font-bold text-gray-500">Total Teachers</p>
-            <p id="stat-teachers-count" class="text-xl sm:text-3xl font-extrabold text-gray-900 mt-1">0</p>
-          </div>
-          <div class="bg-white border border-gray-300 border-l-4 border-l-green-600 p-3 sm:p-5">
-            <p id="lbl-food-houses" class="text-[10px] sm:text-xs uppercase font-bold text-gray-500">Routine Houses</p>
-            <p class="text-xl sm:text-3xl font-extrabold text-gray-900 mt-1">90</p>
-          </div>
-          <div class="bg-white border border-gray-300 border-l-4 border-l-amber-600 p-3 sm:p-5 col-span-2 sm:col-span-1">
-            <p id="lbl-today-food" class="text-[10px] sm:text-xs uppercase font-bold text-gray-500">Today's Food</p>
-            <p id="today-food-summary" class="text-xs sm:text-sm font-bold text-gray-800 mt-1">Morning: - | Noon: - | Night: -</p>
+    <main class="p-3 sm:p-6 space-y-6 overflow-x-hidden">
+
+      <!-- ================= 1. നോട്ടീസ് ബോർഡ് (എല്ലാവർക്കും കാണാം) ================= -->
+      <section id="tab-notices" class="space-y-4">
+        <div id="admin-notice-create" class="bg-white border border-gray-300 p-4 hidden">
+          <h2 class="text-xs font-bold uppercase mb-2">Publish New Notice (അഡ്മിൻ അറിയിപ്പുകൾ)</h2>
+          <form onsubmit="publishNotice(event)" class="space-y-2">
+            <input type="text" id="notice-title" placeholder="Notice Title" required class="w-full border p-2 text-xs">
+            <textarea id="notice-body" placeholder="Notice Details..." required class="w-full border p-2 text-xs h-20"></textarea>
+            <button type="submit" class="bg-slate-900 text-white font-bold px-4 py-2 text-xs uppercase">Publish</button>
+          </form>
+        </div>
+        <div class="bg-white border border-gray-300 p-4 space-y-3">
+          <h2 class="font-bold text-xs uppercase border-b pb-2 text-slate-800">Public Announcements / പൊതു അറിയിപ്പുകൾ</h2>
+          <div id="notices-list" class="space-y-3">
+            <p class="text-xs text-gray-500">Loading notices...</p>
           </div>
         </div>
       </section>
 
-      <!-- 2. വിദ്യാർത്ഥികൾ & ഹാജർ -->
-      <section id="tab-students" class="hidden space-y-4">
+      <!-- ================= 2. PARENT PORTAL (രക്ഷിതാക്കൾക്ക് ഫോൺ നമ്പർ വഴി) ================= -->
+      <section id="tab-parents" class="hidden space-y-4">
         <div class="bg-white border border-gray-300 p-4">
-          <h2 id="lbl-add-student-title" class="text-xs sm:text-sm font-bold uppercase mb-3 border-b pb-2">Add New Student</h2>
-          <form onsubmit="addStudent(event)" class="flex flex-col gap-2 sm:grid sm:grid-cols-4">
-            <input type="text" id="stu-name" placeholder="Student Name" required class="w-full border border-gray-300 p-2.5 text-xs sm:text-sm outline-none focus:border-blue-600">
-            <input type="text" id="stu-class" placeholder="Class / Division" required class="w-full border border-gray-300 p-2.5 text-xs sm:text-sm outline-none focus:border-blue-600">
-            <input type="tel" id="stu-phone" placeholder="Parent Phone Number" required class="w-full border border-gray-300 p-2.5 text-xs sm:text-sm outline-none focus:border-blue-600">
-            <button type="submit" id="btn-submit-student" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 text-xs sm:text-sm">Add Student</button>
+          <h2 class="text-xs sm:text-sm font-bold uppercase mb-2">Parent Portal / രക്ഷിതാക്കളുടെ ഭാഗം</h2>
+          <p class="text-xs text-gray-600 mb-3">നിങ്ങളുടെ രജിസ്റ്റർ ചെയ്ത ഫോൺ നമ്പർ നൽകി കുട്ടിയുടെ ഹാജർ, ഫീസ്, ഭക്ഷണ വിവരം കാണുക:</p>
+          <form onsubmit="searchParentData(event)" class="flex gap-2 max-w-md">
+            <input type="tel" id="parent-search-phone" placeholder="Parent Phone Number (10 digit)" required class="flex-1 border p-2 text-xs sm:text-sm outline-none focus:border-blue-600">
+            <button type="submit" class="bg-blue-600 text-white font-bold px-4 py-2 text-xs uppercase">Search</button>
           </form>
         </div>
 
-        <div class="bg-white border border-gray-300">
-          <div id="lbl-attendance-heading" class="p-3 border-b border-gray-300 font-bold text-xs sm:text-sm uppercase bg-gray-50">Attendance Register</div>
-          <div class="overflow-x-auto table-scroll">
-            <table class="w-full text-left text-xs sm:text-sm whitespace-nowrap">
-              <thead class="bg-gray-100 border-b border-gray-300 uppercase text-[10px] sm:text-xs">
-                <tr>
-                  <th id="th-stu-id" class="p-2.5 border-r">ID</th>
-                  <th id="th-stu-name" class="p-2.5 border-r">Name</th>
-                  <th id="th-stu-class" class="p-2.5 border-r">Class</th>
-                  <th id="th-stu-att" class="p-2.5 text-center">Attendance</th>
-                </tr>
-              </thead>
-              <tbody id="students-table-body">
-                <tr><td colspan="4" class="p-4 text-center text-gray-500">Loading data...</td></tr>
-              </tbody>
-            </table>
+        <div id="parent-results-container" class="space-y-4 hidden">
+          <!-- Student Cards Here -->
+          <div id="parent-student-cards" class="grid sm:grid-cols-2 gap-4"></div>
+          
+          <!-- Parent House Food Routine Card -->
+          <div id="parent-food-card" class="bg-white border p-4 hidden">
+            <h3 class="font-bold text-xs uppercase text-amber-800 mb-1 border-b pb-1">നിങ്ങളുടെ ഭക്ഷണ വിതരണ ഷെഡ്യൂൾ</h3>
+            <div id="parent-food-details" class="text-xs space-y-1 mt-2"></div>
           </div>
         </div>
       </section>
 
-      <!-- 3. അധ്യാപകർ -->
-      <section id="tab-teachers" class="hidden space-y-4">
-        <div class="bg-white border border-gray-300 p-4">
-          <h2 id="lbl-add-teacher-title" class="text-xs sm:text-sm font-bold uppercase mb-3 border-b pb-2">Add New Teacher</h2>
-          <form onsubmit="addTeacher(event)" class="flex flex-col gap-2 sm:grid sm:grid-cols-4">
-            <input type="text" id="tea-name" placeholder="Teacher Name" required class="w-full border border-gray-300 p-2.5 text-xs sm:text-sm outline-none focus:border-purple-600">
-            <input type="text" id="tea-desig" placeholder="Designation" required class="w-full border border-gray-300 p-2.5 text-xs sm:text-sm outline-none focus:border-purple-600">
-            <input type="tel" id="tea-phone" placeholder="Phone Number" required class="w-full border border-gray-300 p-2.5 text-xs sm:text-sm outline-none focus:border-purple-600">
-            <button type="submit" id="btn-submit-teacher" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 px-4 text-xs sm:text-sm">Add Teacher</button>
-          </form>
-        </div>
-        <div class="bg-white border border-gray-300">
-          <div id="lbl-teacher-list-heading" class="p-3 border-b border-gray-300 font-bold text-xs sm:text-sm uppercase bg-gray-50">Teachers List</div>
-          <div class="overflow-x-auto table-scroll">
-            <table class="w-full text-left text-xs sm:text-sm whitespace-nowrap">
-              <thead class="bg-gray-100 border-b border-gray-300 uppercase text-[10px] sm:text-xs">
-                <tr>
-                  <th id="th-tea-name" class="p-2.5 border-r">Name</th>
-                  <th id="th-tea-desig" class="p-2.5 border-r">Designation</th>
-                  <th id="th-tea-phone" class="p-2.5 border-r">Phone</th>
-                </tr>
-              </thead>
-              <tbody id="teachers-table-body">
-                <tr><td colspan="3" class="p-4 text-center text-gray-500">Loading data...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <!-- 4. ഫീസ് മാനേജ്‌മെന്റ് -->
-      <section id="tab-fees" class="hidden space-y-4">
-        <div class="bg-white border border-gray-300 p-4">
-          <h2 id="lbl-add-fee-title" class="text-xs sm:text-sm font-bold uppercase mb-3 border-b pb-2">Record Fee Payment</h2>
-          <form onsubmit="addFeePayment(event)" class="flex flex-col gap-2 sm:grid sm:grid-cols-4">
-            <select id="fee-student-select" required class="w-full border border-gray-300 p-2.5 text-xs sm:text-sm outline-none bg-white">
-              <option value="">Select Student</option>
-            </select>
-            <input type="text" id="fee-month" placeholder="Month (e.g. November)" required class="w-full border border-gray-300 p-2.5 text-xs sm:text-sm outline-none">
-            <input type="number" id="fee-amount" placeholder="Amount (₹)" required class="w-full border border-gray-300 p-2.5 text-xs sm:text-sm outline-none">
-            <button type="submit" id="btn-submit-fee" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-4 text-xs sm:text-sm">Record Payment</button>
-          </form>
-        </div>
-        <div class="bg-white border border-gray-300">
-          <div id="lbl-fee-history-heading" class="p-3 border-b border-gray-300 font-bold text-xs sm:text-sm uppercase bg-gray-50">Fee Payment History</div>
-          <div class="overflow-x-auto table-scroll">
-            <table class="w-full text-left text-xs sm:text-sm whitespace-nowrap">
-              <thead class="bg-gray-100 border-b border-gray-300 uppercase text-[10px] sm:text-xs">
-                <tr>
-                  <th id="th-fee-student" class="p-2.5 border-r">Student</th>
-                  <th id="th-fee-month" class="p-2.5 border-r">Month</th>
-                  <th id="th-fee-amount" class="p-2.5 border-r">Amount</th>
-                  <th id="th-fee-receipt" class="p-2.5 text-center">Receipt</th>
-                </tr>
-              </thead>
-              <tbody id="fees-table-body">
-                <tr><td colspan="4" class="p-4 text-center text-gray-500">Loading data...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <!-- 5. ഭക്ഷണ ഷെഡ്യൂൾ -->
+      <!-- ================= 3. FOOD SCHEDULE (Morning ➔ Noon ➔ Night Order) ================= -->
       <section id="tab-food" class="hidden space-y-4">
-        <div class="bg-white border border-gray-300 p-4">
-          <h2 id="lbl-add-food-title" class="text-xs sm:text-sm font-bold uppercase mb-3 border-b pb-2">Add House to Routine</h2>
+        <div id="food-add-section" class="bg-white border border-gray-300 p-4 hidden">
+          <h2 class="text-xs sm:text-sm font-bold uppercase mb-3 border-b pb-2">Add House to Routine</h2>
           <form onsubmit="addFoodHouse(event)" class="flex flex-col gap-2 sm:grid sm:grid-cols-5">
-            <input type="number" id="food-house-no" placeholder="House No (1-90)" required class="w-full border border-gray-300 p-2.5 text-xs sm:text-sm outline-none">
-            <input type="text" id="food-family-name" placeholder="Head of Family" required class="w-full border border-gray-300 p-2.5 text-xs sm:text-sm outline-none">
-            <input type="tel" id="food-phone" placeholder="Phone Number" required class="w-full border border-gray-300 p-2.5 text-xs sm:text-sm outline-none">
-            <select id="food-slot" class="w-full border border-gray-300 p-2.5 text-xs sm:text-sm outline-none bg-white">
-              <option value="morning">Morning</option>
-              <option value="noon">Noon</option>
-              <option value="night">Night</option>
+            <input type="number" id="food-house-no" placeholder="House No (1-90)" required class="w-full border p-2 text-xs">
+            <input type="text" id="food-family-name" placeholder="Head of Family" required class="w-full border p-2 text-xs">
+            <input type="tel" id="food-phone" placeholder="Phone Number" required class="w-full border p-2 text-xs">
+            <select id="food-slot" class="w-full border p-2 text-xs bg-white">
+              <option value="morning">Morning (രാവിലെ)</option>
+              <option value="noon">Noon (ഉച്ചയ്ക്ക്)</option>
+              <option value="night">Night (രാത്രി)</option>
             </select>
-            <button type="submit" id="btn-submit-food" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-2.5 px-3 text-xs sm:text-sm">Add to Routine</button>
+            <button type="submit" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 text-xs uppercase">Add</button>
           </form>
         </div>
 
         <div class="bg-white border border-gray-300">
-          <div id="lbl-food-routine-heading" class="p-3 border-b border-gray-300 font-bold text-xs sm:text-sm uppercase bg-gray-50">Food Schedule & Reminders</div>
+          <div class="p-3 border-b font-bold text-xs uppercase bg-gray-50 flex justify-between items-center">
+            <span>ഭക്ഷണ വിതരണ ലിസ്റ്റ് (Morning ➔ Noon ➔ Night ക്രമത്തിൽ)</span>
+            <span class="text-[10px] text-gray-500 font-normal">ആകെ: <b id="food-total-count">0</b> വീടുകൾ</span>
+          </div>
           <div class="overflow-x-auto table-scroll">
-            <table class="w-full text-left text-xs sm:text-sm whitespace-nowrap">
-              <thead class="bg-gray-100 border-b border-gray-300 uppercase text-[10px] sm:text-xs">
+            <table class="w-full text-left text-xs whitespace-nowrap">
+              <thead class="bg-gray-100 border-b uppercase text-[10px]">
                 <tr>
-                  <th id="th-food-house" class="p-2.5 border-r">House</th>
-                  <th id="th-food-head" class="p-2.5 border-r">Name</th>
-                  <th id="th-food-time" class="p-2.5 border-r">Slot</th>
-                  <th id="th-food-phone" class="p-2.5 border-r">Phone</th>
-                  <th id="th-food-action" class="p-2.5 text-center">Action</th>
+                  <th class="p-2.5 border-r">House</th>
+                  <th class="p-2.5 border-r">Name</th>
+                  <th class="p-2.5 border-r">Slot</th>
+                  <th class="p-2.5 border-r">Phone</th>
+                  <th class="p-2.5 text-center">Reminder</th>
+                  <th class="p-2.5 text-center admin-only hidden">Manage</th>
                 </tr>
               </thead>
               <tbody id="food-table-body">
-                <tr><td colspan="5" class="p-4 text-center text-gray-500">Loading data...</td></tr>
+                <tr><td colspan="6" class="p-4 text-center text-gray-500">Loading food routine...</td></tr>
               </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 4. DASHBOARD (Admin Only) ================= -->
+      <section id="tab-dashboard" class="hidden space-y-4">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div class="bg-white border border-l-4 border-l-blue-600 p-3 sm:p-5">
+            <p class="text-[10px] uppercase font-bold text-gray-500">Total Students</p>
+            <p id="stat-students-count" class="text-xl sm:text-3xl font-extrabold text-gray-900 mt-1">0</p>
+          </div>
+          <div class="bg-white border border-l-4 border-l-purple-600 p-3 sm:p-5">
+            <p class="text-[10px] uppercase font-bold text-gray-500">Total Teachers</p>
+            <p id="stat-teachers-count" class="text-xl sm:text-3xl font-extrabold text-gray-900 mt-1">0</p>
+          </div>
+          <div class="bg-white border border-l-4 border-l-green-600 p-3 sm:p-5">
+            <p class="text-[10px] uppercase font-bold text-gray-500">Routine Houses</p>
+            <p id="stat-houses-count" class="text-xl sm:text-3xl font-extrabold text-gray-900 mt-1">0</p>
+          </div>
+          <div class="bg-white border border-l-4 border-l-amber-600 p-3 sm:p-5">
+            <p class="text-[10px] uppercase font-bold text-gray-500">Active Notices</p>
+            <p id="stat-notices-count" class="text-xl sm:text-3xl font-extrabold text-gray-900 mt-1">0</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 5. STUDENTS & ATTENDANCE ================= -->
+      <section id="tab-students" class="hidden space-y-4">
+        <div class="bg-white border border-gray-300 p-4">
+          <h2 class="text-xs font-bold uppercase mb-3 border-b pb-2">Add New Student</h2>
+          <form onsubmit="addStudent(event)" class="flex flex-col gap-2 sm:grid sm:grid-cols-4">
+            <input type="text" id="stu-name" placeholder="Student Name" required class="w-full border p-2 text-xs">
+            <input type="text" id="stu-class" placeholder="Class / Division" required class="w-full border p-2 text-xs">
+            <input type="tel" id="stu-phone" placeholder="Parent Phone Number" required class="w-full border p-2 text-xs">
+            <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 text-xs uppercase">Add Student</button>
+          </form>
+        </div>
+        <div class="bg-white border border-gray-300">
+          <div class="p-3 border-b font-bold text-xs uppercase bg-gray-50">Attendance Register</div>
+          <div class="overflow-x-auto table-scroll">
+            <table class="w-full text-left text-xs whitespace-nowrap">
+              <thead class="bg-gray-100 border-b uppercase text-[10px]">
+                <tr>
+                  <th class="p-2 border-r">ID</th>
+                  <th class="p-2 border-r">Name</th>
+                  <th class="p-2 border-r">Class</th>
+                  <th class="p-2 text-center">Attendance</th>
+                </tr>
+              </thead>
+              <tbody id="students-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 6. TEACHERS ================= -->
+      <section id="tab-teachers" class="hidden space-y-4">
+        <div class="bg-white border border-gray-300 p-4">
+          <h2 class="text-xs font-bold uppercase mb-3 border-b pb-2">Add New Teacher</h2>
+          <form onsubmit="addTeacher(event)" class="flex flex-col gap-2 sm:grid sm:grid-cols-4">
+            <input type="text" id="tea-name" placeholder="Teacher Name" required class="w-full border p-2 text-xs">
+            <input type="text" id="tea-desig" placeholder="Designation" required class="w-full border p-2 text-xs">
+            <input type="tel" id="tea-phone" placeholder="Phone Number" required class="w-full border p-2 text-xs">
+            <button type="submit" class="w-full bg-purple-600 text-white font-bold py-2 text-xs uppercase">Add Teacher</button>
+          </form>
+        </div>
+        <div class="bg-white border border-gray-300">
+          <div class="p-3 border-b font-bold text-xs uppercase bg-gray-50">Teachers List</div>
+          <div class="overflow-x-auto table-scroll">
+            <table class="w-full text-left text-xs whitespace-nowrap">
+              <thead class="bg-gray-100 border-b uppercase text-[10px]">
+                <tr>
+                  <th class="p-2 border-r">Name</th>
+                  <th class="p-2 border-r">Designation</th>
+                  <th class="p-2 border-r">Phone</th>
+                </tr>
+              </thead>
+              <tbody id="teachers-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 7. FEES ================= -->
+      <section id="tab-fees" class="hidden space-y-4">
+        <div class="bg-white border border-gray-300 p-4">
+          <h2 class="text-xs font-bold uppercase mb-3 border-b pb-2">Record Fee Payment</h2>
+          <form onsubmit="addFeePayment(event)" class="flex flex-col gap-2 sm:grid sm:grid-cols-4">
+            <select id="fee-student-select" required class="w-full border p-2 text-xs bg-white">
+              <option value="">Select Student</option>
+            </select>
+            <input type="text" id="fee-month" placeholder="Month (e.g. November)" required class="w-full border p-2 text-xs">
+            <input type="number" id="fee-amount" placeholder="Amount (₹)" required class="w-full border p-2 text-xs">
+            <button type="submit" class="w-full bg-emerald-600 text-white font-bold py-2 text-xs uppercase">Record</button>
+          </form>
+        </div>
+        <div class="bg-white border border-gray-300">
+          <div class="p-3 border-b font-bold text-xs uppercase bg-gray-50">Fee History</div>
+          <div class="overflow-x-auto table-scroll">
+            <table class="w-full text-left text-xs whitespace-nowrap">
+              <thead class="bg-gray-100 border-b uppercase text-[10px]">
+                <tr>
+                  <th class="p-2 border-r">Student</th>
+                  <th class="p-2 border-r">Month</th>
+                  <th class="p-2 border-r">Amount</th>
+                  <th class="p-2 text-center">Receipt</th>
+                </tr>
+              </thead>
+              <tbody id="fees-table-body"></tbody>
             </table>
           </div>
         </div>
@@ -252,250 +317,84 @@
     const SUPABASE_ANON_KEY = "sb_publishable_mKndkGCbbe7EOrMYgCUSCw_Wg_G_y9D";
     const db = window.supabase.createClient(SUPABASE_PROJECT_URL, SUPABASE_ANON_KEY);
 
-    let cachedStudents = [];
-    let currentTab = 'dashboard';
-    let currentLang = 'en';
+    let currentSession = null;
+    let currentTab = 'notices';
+    let foodDataList = [];
 
-    // ---------------- AUTHENTICATION HANDLERS ----------------
-    async function initAuth() {
+    // --- INIT AUTH & APP ---
+    async function init() {
       const { data: { session } } = await db.auth.getSession();
-      updateAuthUI(session);
+      currentSession = session;
+      updateSessionUI();
 
       db.auth.onAuthStateChange((_event, session) => {
-        updateAuthUI(session);
+        currentSession = session;
+        updateSessionUI();
       });
+
+      switchTab('notices');
     }
 
-    function updateAuthUI(session) {
-      const authScreen = document.getElementById('auth-screen');
-      const userDisplay = document.getElementById('user-display-email');
+    function updateSessionUI() {
+      const loggedInBox = document.getElementById('auth-logged-in-box');
+      const loggedOutBox = document.getElementById('auth-logged-out-box');
+      const adminNoticeBox = document.getElementById('admin-notice-create');
+      const foodAddSection = document.getElementById('food-add-section');
+      const adminElements = document.querySelectorAll('.admin-only');
 
-      if (session && session.user) {
-        authScreen.classList.add('hidden');
-        userDisplay.innerText = session.user.email;
-        loadDataForTab(currentTab);
+      if (currentSession && currentSession.user) {
+        loggedInBox.classList.remove('hidden');
+        loggedOutBox.classList.add('hidden');
+        document.getElementById('user-display-email').innerText = currentSession.user.email;
+        if(adminNoticeBox) adminNoticeBox.classList.remove('hidden');
+        if(foodAddSection) foodAddSection.classList.remove('hidden');
+        adminElements.forEach(el => el.classList.remove('hidden'));
       } else {
-        authScreen.classList.remove('hidden');
-        userDisplay.innerText = "Not logged in";
+        loggedInBox.classList.add('hidden');
+        loggedOutBox.classList.remove('hidden');
+        if(adminNoticeBox) adminNoticeBox.classList.add('hidden');
+        if(foodAddSection) foodAddSection.classList.add('hidden');
+        adminElements.forEach(el => el.classList.add('hidden'));
       }
     }
 
-    async function handleLogin(e) {
-      e.preventDefault();
-      const email = document.getElementById('auth-email').value;
-      const password = document.getElementById('auth-password').value;
-      const errorEl = document.getElementById('auth-error');
-      const btn = document.getElementById('auth-submit-btn');
+    // --- NAVIGATION ---
+    function switchTab(tabId) {
+      currentTab = tabId;
+      const allTabs = ['notices', 'parents', 'food', 'dashboard', 'students', 'teachers', 'fees'];
+      allTabs.forEach(id => {
+        const el = document.getElementById(`tab-${id}`);
+        const btn = document.getElementById(`btn-${id}`);
+        if(el) el.classList.add('hidden');
+        if(btn) {
+          btn.classList.remove('border-blue-500', 'bg-slate-800', 'text-blue-400');
+          btn.classList.add('border-transparent', 'text-slate-300');
+        }
+      });
 
-      errorEl.classList.add('hidden');
-      btn.innerText = "Signing in...";
-      btn.disabled = true;
-
-      const { data, error } = await db.auth.signInWithPassword({ email, password });
-
-      btn.disabled = false;
-      btn.innerText = "Login";
-
-      if (error) {
-        errorEl.innerText = error.message;
-        errorEl.classList.remove('hidden');
-      } else {
-        e.target.reset();
+      const activeEl = document.getElementById(`tab-${tabId}`);
+      const activeBtn = document.getElementById(`btn-${tabId}`);
+      if(activeEl) activeEl.classList.remove('hidden');
+      if(activeBtn) {
+        activeBtn.classList.remove('border-transparent', 'text-slate-300');
+        activeBtn.classList.add('border-blue-500', 'bg-slate-800', 'text-blue-400');
       }
-    }
 
-    async function handleLogout() {
-      const { error } = await db.auth.signOut();
-      if (error) alert("Logout error: " + error.message);
-    }
+      const titles = {
+        notices: "Notice Board",
+        parents: "Parent Portal",
+        food: "Food Schedule & Reminders",
+        dashboard: "Dashboard",
+        students: "Students & Attendance",
+        teachers: "Teachers",
+        fees: "Fee Management"
+      };
+      document.getElementById('page-title').innerText = titles[tabId] || tabId;
 
-    // ---------------- APP LOGIC & TRANSLATIONS ----------------
-    const dict = {
-      en: {
-        appTitle: "MADRASA PORTAL",
-        navDashboard: "Dashboard",
-        navStudents: "Students & Attendance",
-        navTeachers: "Teachers",
-        navFees: "Fee Management",
-        navFood: "Food Schedule (90 Houses)",
-        titleDashboard: "Dashboard",
-        titleStudents: "Students & Attendance",
-        titleTeachers: "Teachers Data",
-        titleFees: "Fee Management",
-        titleFood: "Food Schedule & Reminders",
-        totStudents: "Total Students",
-        totTeachers: "Total Teachers",
-        foodHouses: "Routine Houses",
-        todayFood: "Today's Food",
-        addStudent: "Add New Student",
-        stuNamePh: "Student Name",
-        stuClassPh: "Class / Division",
-        stuPhonePh: "Parent Phone Number",
-        btnAddStudent: "Add Student",
-        attendanceHeading: "Attendance Register",
-        thId: "ID",
-        thName: "Name",
-        thClass: "Class",
-        thAtt: "Attendance",
-        btnPresent: "Present",
-        btnAbsent: "Absent",
-        addTeacher: "Add New Teacher",
-        teaNamePh: "Teacher Name",
-        teaDesigPh: "Designation",
-        teaPhonePh: "Phone Number",
-        btnAddTeacher: "Add Teacher",
-        teacherListHeading: "Teachers List",
-        thDesig: "Designation",
-        thPhone: "Phone",
-        addFee: "Record Fee Payment",
-        feeStudentSelect: "Select Student",
-        feeMonthPh: "Month (e.g. November)",
-        feeAmountPh: "Amount (₹)",
-        btnAddFee: "Record Payment",
-        feeHistoryHeading: "Fee Payment History",
-        thStudent: "Student",
-        thMonth: "Month",
-        thAmount: "Amount",
-        thReceipt: "Receipt",
-        btnReceipt: "WhatsApp",
-        addFood: "Add House to Routine",
-        foodHousePh: "House No (1-90)",
-        foodFamilyPh: "Head of Family",
-        btnAddFood: "Add to Routine",
-        foodRoutineHeading: "Food Schedule & Reminders",
-        thHouse: "House",
-        thTime: "Slot",
-        thReminder: "Action",
-        btnReminder: "WhatsApp",
-        morning: "Morning",
-        noon: "Noon",
-        night: "Night"
-      },
-      ml: {
-        appTitle: "മദ്രസ പോർട്ടൽ",
-        navDashboard: "ഡാഷ്‌ബോർഡ്",
-        navStudents: "വിദ്യാർത്ഥികൾ & ഹാജർ",
-        navTeachers: "അധ്യാപകർ (Teachers)",
-        navFees: "ഫീസ് മാനേജ്‌മെന്റ്",
-        navFood: "ഭക്ഷണ ഷെഡ്യൂൾ (90 വീട്)",
-        titleDashboard: "ഡാഷ്‌ബോർഡ്",
-        titleStudents: "വിദ്യാർത്ഥികൾ & ഹാജർ",
-        titleTeachers: "അധ്യാപകർ (Teachers)",
-        titleFees: "ഫീസ് മാനേജ്‌മെന്റ്",
-        titleFood: "ഭക്ഷണ ഷെഡ്യൂൾ (90 വീട്)",
-        totStudents: "ആകെ വിദ്യാർത്ഥികൾ",
-        totTeachers: "ആകെ അധ്യാപകർ",
-        foodHouses: "ഭക്ഷണ വിതരണ വീടുകൾ",
-        todayFood: "ഇന്നത്തെ ഭക്ഷണം",
-        addStudent: "പുതിയ വിദ്യാർത്ഥിയെ ചേർക്കുക",
-        stuNamePh: "പേര്",
-        stuClassPh: "ക്ലാസ്",
-        stuPhonePh: "ഫോൺ നമ്പർ",
-        btnAddStudent: "വിദ്യാർത്ഥിയെ ചേർക്കുക",
-        attendanceHeading: "ഹാജർ രേഖപ്പെടുത്തൽ",
-        thId: "ഐഡി",
-        thName: "പേര്",
-        thClass: "ക്ലാസ്",
-        thAtt: "ഹാജർ",
-        btnPresent: "ഹാജർ",
-        btnAbsent: "ലീവ്",
-        addTeacher: "പുതിയ അധ്യാപകരെ ചേർക്കുക",
-        teaNamePh: "അധ്യാപകന്റെ പേര്",
-        teaDesigPh: "വിഭാഗം / തസ്തിക",
-        teaPhonePh: "ഫോൺ നമ്പർ",
-        btnAddTeacher: "അധ്യാപകനെ ചേർക്കുക",
-        teacherListHeading: "അധ്യാപകരുടെ ലിസ്റ്റ്",
-        thDesig: "തസ്തിക",
-        thPhone: "ഫോൺ നമ്പർ",
-        addFee: "ഫീസ് രേഖപ്പെടുത്തുക",
-        feeStudentSelect: "വിദ്യാർത്ഥിയെ തിരഞ്ഞെടുക്കുക",
-        feeMonthPh: "മാസം (ഉദാ: നവംബർ)",
-        feeAmountPh: "തുക (₹)",
-        btnAddFee: "ഫീസ് അടവ് രേഖപ്പെടുത്തുക",
-        feeHistoryHeading: "ഫീസ് പേയ്‌മെന്റ് ഹിസ്റ്ററി",
-        thStudent: "വിദ്യാർത്ഥി",
-        thMonth: "മാസം",
-        thAmount: "തുക",
-        thReceipt: "രസീത്",
-        btnReceipt: "WhatsApp",
-        addFood: "ഭക്ഷണ വിതരണത്തിലേക്ക് ചേർക്കുക",
-        foodHousePh: "വീട്ടുനമ്പർ (1-90)",
-        foodFamilyPh: "കുടുംബനാഥന്റെ പേര്",
-        btnAddFood: "ലിസ്റ്റിലേക്ക് ചേർക്കുക",
-        foodRoutineHeading: "ഭക്ഷണ വിതരണ ലിസ്റ്റ്",
-        thHouse: "വീട്",
-        thTime: "സമയം",
-        thReminder: "റിമൈൻഡർ",
-        btnReminder: "WhatsApp",
-        morning: "രാവിലെ",
-        noon: "ഉച്ചയ്ക്ക്",
-        night: "രാത്രി"
-      }
-    };
+      const sidebar = document.getElementById('sidebar');
+      if (!sidebar.classList.contains('-translate-x-full')) toggleSidebar();
 
-    function setLanguage(lang) {
-      currentLang = lang;
-      const t = dict[lang];
-
-      document.getElementById('lang-btn-en').className = lang === 'en' ? "px-2 py-1 bg-slate-900 text-white" : "px-2 py-1 text-gray-700 hover:bg-gray-200";
-      document.getElementById('lang-btn-ml').className = lang === 'ml' ? "px-2 py-1 bg-slate-900 text-white" : "px-2 py-1 text-gray-700 hover:bg-gray-200";
-
-      document.getElementById('txt-app-title').innerText = t.appTitle;
-      document.getElementById('btn-dashboard').innerText = t.navDashboard;
-      document.getElementById('btn-students').innerText = t.navStudents;
-      document.getElementById('btn-teachers').innerText = t.navTeachers;
-      document.getElementById('btn-fees').innerText = t.navFees;
-      document.getElementById('btn-food').innerText = t.navFood;
-
-      document.getElementById('lbl-total-students').innerText = t.totStudents;
-      document.getElementById('lbl-total-teachers').innerText = t.totTeachers;
-      document.getElementById('lbl-food-houses').innerText = t.foodHouses;
-      document.getElementById('lbl-today-food').innerText = t.todayFood;
-
-      document.getElementById('lbl-add-student-title').innerText = t.addStudent;
-      document.getElementById('stu-name').placeholder = t.stuNamePh;
-      document.getElementById('stu-class').placeholder = t.stuClassPh;
-      document.getElementById('stu-phone').placeholder = t.stuPhonePh;
-      document.getElementById('btn-submit-student').innerText = t.btnAddStudent;
-      document.getElementById('lbl-attendance-heading').innerText = t.attendanceHeading;
-      document.getElementById('th-stu-id').innerText = t.thId;
-      document.getElementById('th-stu-name').innerText = t.thName;
-      document.getElementById('th-stu-class').innerText = t.thClass;
-      document.getElementById('th-stu-att').innerText = t.thAtt;
-
-      document.getElementById('lbl-add-teacher-title').innerText = t.addTeacher;
-      document.getElementById('tea-name').placeholder = t.teaNamePh;
-      document.getElementById('tea-desig').placeholder = t.teaDesigPh;
-      document.getElementById('tea-phone').placeholder = t.teaPhonePh;
-      document.getElementById('btn-submit-teacher').innerText = t.btnAddTeacher;
-      document.getElementById('lbl-teacher-list-heading').innerText = t.teacherListHeading;
-      document.getElementById('th-tea-name').innerText = t.thName;
-      document.getElementById('th-tea-desig').innerText = t.thDesig;
-      document.getElementById('th-tea-phone').innerText = t.thPhone;
-
-      document.getElementById('lbl-add-fee-title').innerText = t.addFee;
-      document.getElementById('fee-month').placeholder = t.feeMonthPh;
-      document.getElementById('fee-amount').placeholder = t.feeAmountPh;
-      document.getElementById('btn-submit-fee').innerText = t.btnAddFee;
-      document.getElementById('lbl-fee-history-heading').innerText = t.feeHistoryHeading;
-      document.getElementById('th-fee-student').innerText = t.thStudent;
-      document.getElementById('th-fee-month').innerText = t.thMonth;
-      document.getElementById('th-fee-amount').innerText = t.thAmount;
-      document.getElementById('th-fee-receipt').innerText = t.thReceipt;
-
-      document.getElementById('lbl-add-food-title').innerText = t.addFood;
-      document.getElementById('food-house-no').placeholder = t.foodHousePh;
-      document.getElementById('food-family-name').placeholder = t.foodFamilyPh;
-      document.getElementById('food-phone').placeholder = t.teaPhonePh;
-      document.getElementById('btn-submit-food').innerText = t.btnAddFood;
-      document.getElementById('lbl-food-routine-heading').innerText = t.foodRoutineHeading;
-      document.getElementById('th-food-house').innerText = t.thHouse;
-      document.getElementById('th-food-head').innerText = t.thName;
-      document.getElementById('th-food-time').innerText = t.thTime;
-      document.getElementById('th-food-phone').innerText = t.thPhone;
-      document.getElementById('th-food-action').innerText = t.thReminder;
-
-      switchTab(currentTab);
+      loadTabData(tabId);
     }
 
     function toggleSidebar() {
@@ -503,86 +402,301 @@
       document.getElementById('backdrop').classList.toggle('hidden');
     }
 
-    function switchTab(tabId) {
-      currentTab = tabId;
-      const t = dict[currentLang];
+    function loadTabData(tabId) {
+      if(tabId === 'notices') loadNotices();
+      if(tabId === 'food') loadFoodSchedule();
+      if(tabId === 'dashboard') loadDashboardStats();
+      if(tabId === 'students') loadStudents();
+      if(tabId === 'teachers') loadTeachers();
+      if(tabId === 'fees') { loadStudents(); loadFees(); }
+    }
 
-      ['dashboard', 'students', 'teachers', 'fees', 'food'].forEach(tid => {
-        document.getElementById(`tab-${tid}`).classList.add('hidden');
-        const btn = document.getElementById(`btn-${tid}`);
-        if(btn) {
-          btn.classList.remove('border-blue-500', 'bg-slate-800', 'text-blue-400');
-          btn.classList.add('border-transparent', 'text-slate-300');
-        }
-      });
+    // --- AUTH LOGIN / LOGOUT MODALS ---
+    function openLoginModal() { document.getElementById('login-modal').classList.remove('hidden'); document.getElementById('login-modal').classList.add('flex'); }
+    function closeLoginModal() { document.getElementById('login-modal').classList.add('hidden'); document.getElementById('login-modal').classList.remove('flex'); }
 
-      document.getElementById(`tab-${tabId}`).classList.remove('hidden');
-      const activeBtn = document.getElementById(`btn-${tabId}`);
-      if(activeBtn) {
-        activeBtn.classList.remove('border-transparent', 'text-slate-300');
-        activeBtn.classList.add('border-blue-500', 'bg-slate-800', 'text-blue-400');
+    async function handleStaffLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
+      const err = document.getElementById('login-error');
+      const btn = document.getElementById('btn-login-submit');
+
+      err.classList.add('hidden');
+      btn.innerText = "Checking...";
+      btn.disabled = true;
+
+      const { data, error } = await db.auth.signInWithPassword({ email, password });
+      btn.disabled = false;
+      btn.innerText = "Sign In";
+
+      if(error) {
+        err.innerText = error.message;
+        err.classList.remove('hidden');
+      } else {
+        closeLoginModal();
+        e.target.reset();
+        switchTab('dashboard');
       }
-
-      const titles = {
-        dashboard: t.titleDashboard,
-        students: t.titleStudents,
-        teachers: t.titleTeachers,
-        fees: t.titleFees,
-        food: t.titleFood
-      };
-      document.getElementById('page-title').innerText = titles[tabId];
-
-      const sidebar = document.getElementById('sidebar');
-      if (!sidebar.classList.contains('-translate-x-full')) toggleSidebar();
-
-      loadDataForTab(tabId);
     }
 
-    function loadDataForTab(tabId) {
-      if (tabId === 'dashboard') loadDashboardCounts();
-      if (tabId === 'students') loadStudents();
-      if (tabId === 'teachers') loadTeachers();
-      if (tabId === 'fees') { loadStudents(); loadFees(); }
-      if (tabId === 'food') loadFoodSchedule();
+    async function handleLogout() {
+      await db.auth.signOut();
+      switchTab('notices');
     }
 
-    async function loadDashboardCounts() {
-      const { data: s } = await db.from('students').select('id');
-      const { data: t } = await db.from('teachers').select('id');
-      document.getElementById('stat-students-count').innerText = s ? s.length : 0;
-      document.getElementById('stat-teachers-count').innerText = t ? t.length : 0;
-    }
-
-    async function loadStudents() {
-      const { data, error } = await db.from('students').select('*').order('id', { ascending: false });
-      if (error) return;
-      cachedStudents = data || [];
-      document.getElementById('stat-students-count').innerText = cachedStudents.length;
-
-      const tbody = document.getElementById('students-table-body');
-      const feeSelect = document.getElementById('fee-student-select');
-      const t = dict[currentLang];
-      tbody.innerHTML = '';
-      feeSelect.innerHTML = `<option value="">${t.feeStudentSelect}</option>`;
-
-      if (cachedStudents.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-500">${currentLang === 'en' ? 'No students found' : 'വിദ്യാർത്ഥികളെ ചേർത്തിട്ടില്ല'}</td></tr>`;
+    // --- 1. NOTICES ---
+    async function loadNotices() {
+      const { data } = await db.from('notices').select('*').order('id', { ascending: false });
+      const container = document.getElementById('notices-list');
+      container.innerHTML = '';
+      if(!data || data.length === 0) {
+        container.innerHTML = `<p class="text-xs text-gray-500">ഇപ്പോൾ പുതിയ അറിയിപ്പുകൾ ലഭ്യമല്ല.</p>`;
         return;
       }
+      data.forEach(n => {
+        const dateStr = new Date(n.created_at).toLocaleDateString('ml-IN');
+        container.innerHTML += `
+          <div class="border-l-4 border-l-blue-600 bg-gray-50 p-3 border border-gray-200">
+            <div class="flex justify-between items-center mb-1">
+              <h4 class="font-bold text-xs text-gray-900">${n.title}</h4>
+              <span class="text-[10px] text-gray-500 font-mono">${dateStr}</span>
+            </div>
+            <p class="text-xs text-gray-700 whitespace-pre-line">${n.message}</p>
+          </div>
+        `;
+      });
+    }
 
-      cachedStudents.forEach(s => {
+    async function publishNotice(e) {
+      e.preventDefault();
+      const title = document.getElementById('notice-title').value;
+      const message = document.getElementById('notice-body').value;
+      const { error } = await db.from('notices').insert([{ title, message }]);
+      if(error) alert("Error: " + error.message);
+      else {
+        alert("Notice published successfully!");
+        e.target.reset();
+        loadNotices();
+      }
+    }
+
+    // --- 2. FOOD SCHEDULE (Morning ➔ Noon ➔ Night Order & Edit) ---
+    async function loadFoodSchedule() {
+      const { data } = await db.from('food_routine').select('*').order('house_no', { ascending: true });
+      foodDataList = data || [];
+      document.getElementById('food-total-count').innerText = foodDataList.length;
+
+      // ഓർഡർ ചെയ്യുക: ആദ്യം House No, ഒരേ നമ്പറാണെങ്കിൽ Morning ➔ Noon ➔ Night
+      const slotPriority = { morning: 1, noon: 2, night: 3 };
+      foodDataList.sort((a, b) => {
+        if (Number(a.house_no) === Number(b.house_no)) {
+          return (slotPriority[a.meal_slot] || 9) - (slotPriority[b.meal_slot] || 9);
+        }
+        return Number(a.house_no) - Number(b.house_no);
+      });
+
+      const tbody = document.getElementById('food-table-body');
+      tbody.innerHTML = '';
+
+      const slotLabels = {
+        morning: { text: 'രാവിലെ', color: 'bg-amber-100 text-amber-800' },
+        noon: { text: 'ഉച്ചയ്ക്ക്', color: 'bg-blue-100 text-blue-800' },
+        night: { text: 'രാത്രി', color: 'bg-purple-100 text-purple-800' }
+      };
+
+      const isAdmin = currentSession && currentSession.user;
+
+      foodDataList.forEach(h => {
+        const slot = slotLabels[h.meal_slot] || { text: h.meal_slot, color: 'bg-gray-100 text-gray-800' };
         tbody.innerHTML += `
-          <tr class="border-b border-gray-200">
-            <td class="p-2.5 border-r font-mono font-bold">#${s.id}</td>
-            <td class="p-2.5 border-r font-medium">${s.name}</td>
-            <td class="p-2.5 border-r">${s.class}</td>
-            <td class="p-2.5 text-center space-x-1 sm:space-x-2">
-              <button onclick="markAttendance(${s.id}, 'present')" class="bg-emerald-600 active:bg-emerald-700 text-white px-2 py-1 text-[11px] font-bold">${t.btnPresent}</button>
-              <button onclick="markAttendance(${s.id}, 'absent')" class="bg-rose-600 active:bg-rose-700 text-white px-2 py-1 text-[11px] font-bold">${t.btnAbsent}</button>
+          <tr class="border-b border-gray-200 hover:bg-gray-50">
+            <td class="p-2.5 border-r font-mono font-bold">#${h.house_no}</td>
+            <td class="p-2.5 border-r font-medium">${h.family_name}</td>
+            <td class="p-2.5 border-r"><span class="px-2 py-0.5 text-[10px] font-bold ${slot.color}">${slot.text}</span></td>
+            <td class="p-2.5 border-r font-mono">${h.phone}</td>
+            <td class="p-2.5 text-center">
+              <button onclick="sendFoodReminderMalayalam('${h.phone}', '${h.family_name}', '${h.meal_slot}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1 text-[11px] font-bold">
+                WhatsApp
+              </button>
             </td>
+            ${isAdmin ? `
+            <td class="p-2.5 text-center admin-only">
+              <button onclick="openFoodEditModal(${h.id})" class="text-blue-600 hover:underline font-bold text-[11px]">Edit</button>
+            </td>` : ''}
           </tr>
         `;
-        feeSelect.innerHTML += `<option value="${s.id}">${s.name} (${s.class})</option>`;
+      });
+    }
+
+    // കൃത്യമായ മലയാളം WhatsApp സന്ദേശം
+    function sendFoodReminderMalayalam(phone, name, slotKey) {
+      let slotMalayalam = "ഭക്ഷണം";
+      if(slotKey === 'morning') slotMalayalam = "രാവിലത്തെ ഭക്ഷണം";
+      if(slotKey === 'noon') slotMalayalam = "ഉച്ചയ്ക്കത്തെ ഭക്ഷണം";
+      if(slotKey === 'night') slotMalayalam = "രാത്രിയിലെ ഭക്ഷണം";
+
+      const msg = encodeURIComponent(`അസ്സലാമു അലൈകും ${name},
+
+നാളെ മദ്റസയിലെ ഉസ്താദുമാർക്കുള്ള ${slotMalayalam} താങ്കളുടെ വീട്ടിൽ നിന്നാണ് എന്ന് ഓർമ്മിപ്പിക്കുന്നു.
+
+- മദ്റസ മാനേജ്‌മെന്റ്`);
+      window.open(`https://wa.me/91${phone}?text=${msg}`, '_blank');
+    }
+
+    // Food Edit & Delete Modal
+    function openFoodEditModal(id) {
+      const item = foodDataList.find(f => f.id === id);
+      if(!item) return;
+      document.getElementById('edit-food-id').value = item.id;
+      document.getElementById('edit-food-no').value = item.house_no;
+      document.getElementById('edit-food-name').value = item.family_name;
+      document.getElementById('edit-food-phone').value = item.phone;
+      document.getElementById('edit-food-slot').value = item.meal_slot;
+      document.getElementById('food-edit-modal').classList.remove('hidden');
+      document.getElementById('food-edit-modal').classList.add('flex');
+    }
+
+    function closeFoodEditModal() {
+      document.getElementById('food-edit-modal').classList.add('hidden');
+      document.getElementById('food-edit-modal').classList.remove('flex');
+    }
+
+    async function saveEditedFood(e) {
+      e.preventDefault();
+      const id = document.getElementById('edit-food-id').value;
+      const { error } = await db.from('food_routine').update({
+        house_no: document.getElementById('edit-food-no').value,
+        family_name: document.getElementById('edit-food-name').value,
+        phone: document.getElementById('edit-food-phone').value,
+        meal_slot: document.getElementById('edit-food-slot').value
+      }).eq('id', id);
+
+      if(error) alert("Error: " + error.message);
+      else {
+        closeFoodEditModal();
+        loadFoodSchedule();
+      }
+    }
+
+    async function deleteFoodRoutine() {
+      if(!confirm("ഈ വീടിന്റെ വിവരങ്ങൾ ഒഴിവാക്കണോ?")) return;
+      const id = document.getElementById('edit-food-id').value;
+      const { error } = await db.from('food_routine').delete().eq('id', id);
+      if(error) alert("Error: " + error.message);
+      else {
+        closeFoodEditModal();
+        loadFoodSchedule();
+      }
+    }
+
+    async function addFoodHouse(e) {
+      e.preventDefault();
+      const { error } = await db.from('food_routine').insert([{
+        house_no: document.getElementById('food-house-no').value,
+        family_name: document.getElementById('food-family-name').value,
+        phone: document.getElementById('food-phone').value,
+        meal_slot: document.getElementById('food-slot').value,
+        allocated_date: new Date().toISOString().split('T')[0]
+      }]);
+      if(error) alert("Error: " + error.message);
+      else {
+        alert("House added!");
+        e.target.reset();
+        loadFoodSchedule();
+      }
+    }
+
+    // --- 3. PARENT PORTAL SEARCH (ഫോൺ നമ്പർ വഴി ലളിതമായി) ---
+    async function searchParentData(e) {
+      e.preventDefault();
+      const phoneInput = document.getElementById('parent-search-phone').value.trim();
+      const container = document.getElementById('parent-results-container');
+      const studentCards = document.getElementById('parent-student-cards');
+      const foodCard = document.getElementById('parent-food-card');
+      const foodDetails = document.getElementById('parent-food-details');
+
+      container.classList.remove('hidden');
+      studentCards.innerHTML = '<p class="text-xs text-gray-500">Searching records...</p>';
+      foodCard.classList.add('hidden');
+
+      // 1. Find Students with this phone
+      const { data: students } = await db.from('students').select('*').eq('phone', phoneInput);
+
+      if(!students || students.length === 0) {
+        studentCards.innerHTML = `<p class="text-xs text-rose-600 font-bold p-3 bg-rose-50 border border-rose-200">ഈ ഫോൺ നമ്പറിൽ കുട്ടികളുടെ വിവരങ്ങൾ കണ്ടെത്തിയില്ല. ദയവായി മദ്റസയിൽ നൽകിയ ഫോൺ നമ്പർ തന്നെ നൽകുക.</p>`;
+      } else {
+        studentCards.innerHTML = '';
+        for(let stu of students) {
+          // ഹാജർ സ്റ്റാറ്റ്സ്
+          const { data: att } = await db.from('attendance').select('status').eq('student_id', stu.id);
+          const totalDays = att ? att.length : 0;
+          const presentDays = att ? att.filter(a => a.status === 'present').length : 0;
+
+          // ഫീസ് വിവരങ്ങൾ
+          const { data: fees } = await db.from('fee_payments').select('*').eq('student_id', stu.id).order('id', { ascending: false });
+
+          let feeHtml = fees && fees.length > 0 
+            ? fees.map(f => `<span class="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 font-bold mr-1">${f.month}: ₹${f.amount} (Paid)</span>`).join(' ')
+            : '<span class="text-xs text-gray-400">ഫീസ് വിവരങ്ങൾ ലഭ്യമല്ല</span>';
+
+          studentCards.innerHTML += `
+            <div class="bg-white border border-gray-300 p-4 border-t-4 border-t-blue-600 shadow-sm space-y-2">
+              <div class="flex justify-between items-start border-b pb-2">
+                <div>
+                  <h3 class="font-extrabold text-sm text-gray-900">${stu.name}</h3>
+                  <p class="text-xs text-gray-500 font-bold">ക്ലാസ്സ്: ${stu.class}</p>
+                </div>
+                <span class="text-[10px] bg-blue-50 text-blue-700 px-2 py-1 font-mono font-bold">ID: #${stu.id}</span>
+              </div>
+              <div class="text-xs space-y-1">
+                <p><b>ഹാജർ നില:</b> ${presentDays} / ${totalDays} ദിവസങ്ങൾ (${totalDays > 0 ? Math.round((presentDays/totalDays)*100) : 0}%)</p>
+                <div class="pt-1"><b>ഫീസ് വിവരങ്ങൾ:</b></div>
+                <div class="flex flex-wrap gap-1">${feeHtml}</div>
+              </div>
+            </div>
+          `;
+        }
+      }
+
+      // 2. Find Food Routine for this family phone
+      const { data: foodRoutines } = await db.from('food_routine').select('*').eq('phone', phoneInput);
+      if(foodRoutines && foodRoutines.length > 0) {
+        foodCard.classList.remove('hidden');
+        foodDetails.innerHTML = '';
+        const slotMalayalam = { morning: 'രാവിലെ', noon: 'ഉച്ചയ്ക്ക്', night: 'രാത്രി' };
+        foodRoutines.forEach(fr => {
+          foodDetails.innerHTML += `
+            <p>• <b>വീട്ടുനമ്പർ:</b> #${fr.house_no} (${fr.family_name})</p>
+            <p>• <b>ഭക്ഷണ സമയം:</b> <span class="text-blue-700 font-bold">${slotMalayalam[fr.meal_slot] || fr.meal_slot}</span></p>
+          `;
+        });
+      }
+    }
+
+    // --- 4. STUDENTS, TEACHERS & FEES MANAGEMENT ---
+    async function loadStudents() {
+      const { data } = await db.from('students').select('*').order('id', { ascending: false });
+      const tbody = document.getElementById('students-table-body');
+      const feeSelect = document.getElementById('fee-student-select');
+      if(tbody) tbody.innerHTML = '';
+      if(feeSelect) feeSelect.innerHTML = '<option value="">Select Student</option>';
+
+      (data || []).forEach(s => {
+        if(tbody) {
+          tbody.innerHTML += `
+            <tr class="border-b">
+              <td class="p-2 border-r font-mono">#${s.id}</td>
+              <td class="p-2 border-r font-medium">${s.name}</td>
+              <td class="p-2 border-r">${s.class}</td>
+              <td class="p-2 text-center space-x-1">
+                <button onclick="markAttendance(${s.id}, 'present')" class="bg-emerald-600 text-white px-2 py-0.5 text-[10px] font-bold">Present</button>
+                <button onclick="markAttendance(${s.id}, 'absent')" class="bg-rose-600 text-white px-2 py-0.5 text-[10px] font-bold">Absent</button>
+              </td>
+            </tr>
+          `;
+        }
+        if(feeSelect) feeSelect.innerHTML += `<option value="${s.id}">${s.name} (${s.class})</option>`;
       });
     }
 
@@ -593,39 +707,28 @@
         class: document.getElementById('stu-class').value,
         phone: document.getElementById('stu-phone').value
       }]);
-      if (error) alert("Error: " + error.message);
-      else {
-        alert(currentLang === 'en' ? "Student added successfully!" : "വിദ്യാർത്ഥിയെ വിജയകരമായി ചേർത്തു!");
-        e.target.reset();
-        loadStudents();
-      }
+      if(error) alert(error.message);
+      else { alert("Student Added!"); e.target.reset(); loadStudents(); }
     }
 
     async function markAttendance(studentId, status) {
       const today = new Date().toISOString().split('T')[0];
       const { error } = await db.from('attendance').insert([{ student_id: studentId, date: today, status }]);
-      if (error) alert("Error: " + error.message);
-      else alert(currentLang === 'en' ? `Attendance recorded: ${status}` : `ഹാജർ രേഖപ്പെടുത്തി: ${status === 'present' ? 'ഹാജർ' : 'ലീവ്'}`);
+      if(error) alert(error.message);
+      else alert(`Marked: ${status}`);
     }
 
     async function loadTeachers() {
       const { data } = await db.from('teachers').select('*').order('id', { ascending: false });
-      const teachers = data || [];
-      document.getElementById('stat-teachers-count').innerText = teachers.length;
       const tbody = document.getElementById('teachers-table-body');
+      if(!tbody) return;
       tbody.innerHTML = '';
-
-      if (teachers.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-gray-500">${currentLang === 'en' ? 'No teachers found' : 'അധ്യാപകരെ ചേർത്തിട്ടില്ല'}</td></tr>`;
-        return;
-      }
-
-      teachers.forEach(t => {
+      (data || []).forEach(t => {
         tbody.innerHTML += `
-          <tr class="border-b border-gray-200">
-            <td class="p-2.5 border-r font-medium">${t.name}</td>
-            <td class="p-2.5 border-r">${t.designation}</td>
-            <td class="p-2.5 border-r font-mono">${t.phone || '-'}</td>
+          <tr class="border-b">
+            <td class="p-2 border-r font-medium">${t.name}</td>
+            <td class="p-2 border-r">${t.designation}</td>
+            <td class="p-2 border-r font-mono">${t.phone || '-'}</td>
           </tr>
         `;
       });
@@ -638,36 +741,25 @@
         designation: document.getElementById('tea-desig').value,
         phone: document.getElementById('tea-phone').value
       }]);
-      if (error) alert("Error: " + error.message);
-      else {
-        alert(currentLang === 'en' ? "Teacher added successfully!" : "അധ്യാപകനെ ചേർത്തു!");
-        e.target.reset();
-        loadTeachers();
-      }
+      if(error) alert(error.message);
+      else { alert("Teacher Added!"); e.target.reset(); loadTeachers(); }
     }
 
     async function loadFees() {
       const { data } = await db.from('fee_payments').select('*, students(name, phone)').order('id', { ascending: false });
       const tbody = document.getElementById('fees-table-body');
+      if(!tbody) return;
       tbody.innerHTML = '';
-      const fees = data || [];
-      const t = dict[currentLang];
-
-      if (fees.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-500">${currentLang === 'en' ? 'No fee records found' : 'ഫീസ് വിവരങ്ങൾ ഇല്ല'}</td></tr>`;
-        return;
-      }
-
-      fees.forEach(f => {
+      (data || []).forEach(f => {
         const studentName = f.students ? f.students.name : 'Unknown';
         const phone = f.students ? f.students.phone : '';
         tbody.innerHTML += `
-          <tr class="border-b border-gray-200">
-            <td class="p-2.5 border-r font-medium">${studentName}</td>
-            <td class="p-2.5 border-r">${f.month}</td>
-            <td class="p-2.5 border-r font-mono font-bold">₹${f.amount}</td>
-            <td class="p-2.5 text-center">
-              <button onclick="sendFeeReceipt('${phone}', '${studentName}', '${f.month}', '${f.amount}')" class="bg-blue-600 active:bg-blue-700 text-white px-2 py-1 text-[11px] font-bold">${t.btnReceipt}</button>
+          <tr class="border-b">
+            <td class="p-2 border-r">${studentName}</td>
+            <td class="p-2 border-r">${f.month}</td>
+            <td class="p-2 border-r font-mono font-bold">₹${f.amount}</td>
+            <td class="p-2 text-center">
+              <button onclick="sendFeeReceiptMalayalam('${phone}', '${studentName}', '${f.month}', '${f.amount}')" class="bg-blue-600 text-white px-2 py-0.5 text-[10px] font-bold">WhatsApp</button>
             </td>
           </tr>
         `;
@@ -683,72 +775,28 @@
         status: 'paid',
         payment_date: new Date().toISOString().split('T')[0]
       }]);
-      if (error) alert("Error: " + error.message);
-      else {
-        alert(currentLang === 'en' ? "Fee payment recorded!" : "ഫീസ് അടവ് രേഖപ്പെടുത്തി!");
-        e.target.reset();
-        loadFees();
-      }
+      if(error) alert(error.message);
+      else { alert("Fee payment recorded!"); e.target.reset(); loadFees(); }
     }
 
-    function sendFeeReceipt(phone, name, month, amount) {
-      const msg = encodeURIComponent(`Assalamu Alaikum, fee payment of Rs.${amount} for the month of ${month} for student ${name} has been received. Thank you.`);
+    function sendFeeReceiptMalayalam(phone, name, month, amount) {
+      const msg = encodeURIComponent(`അസ്സലാമു അലൈകും,
+വിദ്യാർത്ഥി ${name}-ന്റെ ${month} മാസത്തെ മദ്റസ ഫീസ് (₹${amount}) ലഭിച്ചിരിക്കുന്നു. നന്ദി.`);
       window.open(`https://wa.me/91${phone}?text=${msg}`, '_blank');
     }
 
-    async function loadFoodSchedule() {
-      const { data } = await db.from('food_routine').select('*').order('house_no', { ascending: true });
-      const tbody = document.getElementById('food-table-body');
-      tbody.innerHTML = '';
-      const food = data || [];
-      const t = dict[currentLang];
-
-      if (food.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">${currentLang === 'en' ? 'No houses added' : 'വീടുകൾ ചേർത്തിട്ടില്ല'}</td></tr>`;
-        return;
-      }
-
-      food.forEach(h => {
-        const slotText = h.meal_slot === 'morning' ? t.morning : h.meal_slot === 'noon' ? t.noon : t.night;
-        tbody.innerHTML += `
-          <tr class="border-b border-gray-200">
-            <td class="p-2.5 border-r font-mono font-bold">#${h.house_no}</td>
-            <td class="p-2.5 border-r font-medium">${h.family_name}</td>
-            <td class="p-2.5 border-r">${slotText}</td>
-            <td class="p-2.5 border-r font-mono">${h.phone}</td>
-            <td class="p-2.5 text-center">
-              <button onclick="sendFoodReminder('${h.phone}', '${h.family_name}', '${slotText}')" class="bg-emerald-600 active:bg-emerald-700 text-white px-2 py-1 text-[11px] font-bold">${t.btnReminder}</button>
-            </td>
-          </tr>
-        `;
-      });
+    async function loadDashboardStats() {
+      const { data: s } = await db.from('students').select('id');
+      const { data: t } = await db.from('teachers').select('id');
+      const { data: f } = await db.from('food_routine').select('id');
+      const { data: n } = await db.from('notices').select('id');
+      document.getElementById('stat-students-count').innerText = s ? s.length : 0;
+      document.getElementById('stat-teachers-count').innerText = t ? t.length : 0;
+      document.getElementById('stat-houses-count').innerText = f ? f.length : 0;
+      document.getElementById('stat-notices-count').innerText = n ? n.length : 0;
     }
 
-    async function addFoodHouse(e) {
-      e.preventDefault();
-      const { error } = await db.from('food_routine').insert([{
-        house_no: document.getElementById('food-house-no').value,
-        family_name: document.getElementById('food-family-name').value,
-        phone: document.getElementById('food-phone').value,
-        meal_slot: document.getElementById('food-slot').value,
-        allocated_date: new Date().toISOString().split('T')[0]
-      }]);
-      if (error) alert("Error: " + error.message);
-      else {
-        alert(currentLang === 'en' ? "House added to schedule!" : "വീട് ചേർത്തു!");
-        e.target.reset();
-        loadFoodSchedule();
-      }
-    }
-
-    function sendFoodReminder(phone, name, slot) {
-      const msg = encodeURIComponent(`Assalamu Alaikum ${name}, reminder that tomorrow is your turn to provide ${slot} food for the madrasa.`);
-      window.open(`https://wa.me/91${phone}?text=${msg}`, '_blank');
-    }
-
-    // പ്രാരംഭ ഘട്ടം
-    setLanguage('en');
-    initAuth();
+    init();
   </script>
 </body>
 </html>
