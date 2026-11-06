@@ -447,8 +447,6 @@
     const SUPABASE_ANON_KEY = "sb_publishable_mKndkGCbbe7EOrMYgCUSCw_Wg_G_y9D";
     const db = window.supabase.createClient(SUPABASE_PROJECT_URL, SUPABASE_ANON_KEY);
 
-    const MASTER_ADMIN_EMAIL = "chembrasseri1@gmail.com";
-
     let activeUser = null; 
     let currentTab = 'notices';
     let foodDataList = [];
@@ -474,29 +472,51 @@
       }
     }
 
-    // --- STAFF AUTH ---
-    async function handleStaffAuth(e) {
-      e.preventDefault();
-      const email = document.getElementById('gate-staff-email').value.trim();
-      const password = document.getElementById('gate-staff-password').value;
-      const errEl = document.getElementById('gate-staff-error');
-      const btn = document.getElementById('gate-staff-btn');
+   async function verifyStaffPermissions(email) {
+  let permissions = null;
 
-      errEl.classList.add('hidden');
-      btn.innerText = "Signing in...";
-      btn.disabled = true;
+  try {
+    // ഡാറ്റാബേസിൽ പോയി ഈ ഇമെയിലിന്റെ റോൾ എന്താണെന്ന് പരിശോധിക്കുന്നു
+    const { data, error } = await db
+      .from('staff_roles')
+      .select('*')
+      .eq('email', email.trim().toLowerCase())
+      .maybeSingle();
 
-      const { data, error } = await db.auth.signInWithPassword({ email, password });
-      btn.disabled = false;
-      btn.innerText = "Login to Portal";
-
-      if(error) {
-        errEl.innerText = error.message;
-        errEl.classList.remove('hidden');
-      } else {
-        await verifyStaffPermissions(email);
-      }
+    if (data) {
+      permissions = data;
     }
+  } catch (e) {
+    console.error("Permission check error:", e);
+  }
+
+  // ഡാറ്റാബേസിൽ റോൾ ഇല്ലെങ്കിൽ ഡിഫോൾട്ട് ആയി പവർ ഒന്നുമില്ലാത്ത Usthad റോൾ നൽകുന്നു
+  if (!permissions) {
+    permissions = { 
+      role: 'usthad', 
+      can_attendance: true, 
+      can_fees: false, 
+      can_food: false, 
+      can_notices: false 
+    };
+  }
+
+  activeUser = {
+    type: 'staff',
+    email: email,
+    role: permissions.role,
+    permissions: permissions
+  };
+
+  document.getElementById('auth-gate').classList.add('hidden');
+  setupPortalLayout();
+
+  if (permissions.role === 'admin') {
+    switchTab('dashboard');
+  } else {
+    switchTab('attendance');
+  }
+}
 
     async function verifyStaffPermissions(email) {
       let isMaster = (email.toLowerCase() === MASTER_ADMIN_EMAIL.toLowerCase());
