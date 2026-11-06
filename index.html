@@ -356,7 +356,7 @@
                 <tr>
                   <th class="p-2 border-r">Name</th>
                   <th class="p-2 border-r">Designation</th>
-                  <th class="p-2 border-r">Phone</th>
+                  <th class="p-2 border-r font-mono">${t.phone || '-'}</th>
                 </tr>
               </thead>
               <tbody id="teachers-table-body"></tbody>
@@ -472,68 +472,66 @@
       }
     }
 
-   async function verifyStaffPermissions(email) {
-  let permissions = null;
+    // --- STAFF AUTH ---
+    async function handleStaffAuth(e) {
+      if (e) e.preventDefault();
+      const email = document.getElementById('gate-staff-email').value.trim();
+      const password = document.getElementById('gate-staff-password').value;
+      const errEl = document.getElementById('gate-staff-error');
+      const btn = document.getElementById('gate-staff-btn');
 
-  try {
-    // ഡാറ്റാബേസിൽ പോയി ഈ ഇമെയിലിന്റെ റോൾ എന്താണെന്ന് പരിശോധിക്കുന്നു
-    const { data, error } = await db
-      .from('staff_roles')
-      .select('*')
-      .eq('email', email.trim().toLowerCase())
-      .maybeSingle();
+      errEl.classList.add('hidden');
+      btn.innerText = "Signing in...";
+      btn.disabled = true;
 
-    if (data) {
-      permissions = data;
+      try {
+        const { data, error } = await db.auth.signInWithPassword({ email, password });
+        btn.disabled = false;
+        btn.innerText = "Login to Portal";
+
+        if(error) {
+          errEl.innerText = "Login Failed: " + error.message;
+          errEl.classList.remove('hidden');
+          alert("Login Failed: " + error.message);
+          return;
+        }
+
+        if(data && data.user) {
+          await verifyStaffPermissions(email);
+        }
+      } catch (err) {
+        btn.disabled = false;
+        btn.innerText = "Login to Portal";
+        alert("Unexpected Error: " + err.message);
+      }
     }
-  } catch (e) {
-    console.error("Permission check error:", e);
-  }
 
-  // ഡാറ്റാബേസിൽ റോൾ ഇല്ലെങ്കിൽ ഡിഫോൾട്ട് ആയി പവർ ഒന്നുമില്ലാത്ത Usthad റോൾ നൽകുന്നു
-  if (!permissions) {
-    permissions = { 
-      role: 'usthad', 
-      can_attendance: true, 
-      can_fees: false, 
-      can_food: false, 
-      can_notices: false 
-    };
-  }
-
-  activeUser = {
-    type: 'staff',
-    email: email,
-    role: permissions.role,
-    permissions: permissions
-  };
-
-  document.getElementById('auth-gate').classList.add('hidden');
-  setupPortalLayout();
-
-  if (permissions.role === 'admin') {
-    switchTab('dashboard');
-  } else {
-    switchTab('attendance');
-  }
-}
-
+    // --- VERIFY ROLES FROM DATABASE ---
     async function verifyStaffPermissions(email) {
-      let isMaster = (email.toLowerCase() === MASTER_ADMIN_EMAIL.toLowerCase());
+      let permissions = null;
 
-      let permissions = { 
-        role: isMaster ? 'admin' : 'usthad', 
-        can_attendance: true, 
-        can_fees: isMaster, 
-        can_food: isMaster, 
-        can_notices: true 
-      };
+      try {
+        const { data, error } = await db
+          .from('staff_roles')
+          .select('*')
+          .eq('email', email.trim().toLowerCase())
+          .maybeSingle();
 
-      if(!isMaster) {
-        try {
-          const { data } = await db.from('staff_roles').select('*').eq('email', email).maybeSingle();
-          if(data) permissions = data;
-        } catch(e) {}
+        if (data) {
+          permissions = data;
+        }
+      } catch (e) {
+        console.error("Permission check error:", e);
+      }
+
+      if (!permissions) {
+        permissions = { 
+          role: 'usthad', 
+          can_attendance: true, 
+          can_fees: false, 
+          can_food: false, 
+          can_notices: false 
+        };
       }
 
       activeUser = {
@@ -546,7 +544,7 @@
       document.getElementById('auth-gate').classList.add('hidden');
       setupPortalLayout();
 
-      if(permissions.role === 'admin') {
+      if (permissions.role === 'admin') {
         switchTab('dashboard');
       } else {
         switchTab('attendance');
@@ -555,7 +553,7 @@
 
     // --- PARENT AUTH (ONLY MOBILE NUMBER) ---
     async function handleParentAuth(e) {
-      e.preventDefault();
+      if (e) e.preventDefault();
       const stuPhone = document.getElementById('gate-stu-phone').value.trim();
       const errEl = document.getElementById('gate-parent-error');
       const btn = document.getElementById('gate-parent-btn');
@@ -564,7 +562,6 @@
       btn.innerText = "Verifying...";
       btn.disabled = true;
 
-      // ഫോൺ നമ്പർ വെച്ച് കുട്ടികളെ കണ്ടെത്തുക
       const { data, error } = await db.from('students').select('*').eq('phone', stuPhone);
 
       btn.disabled = false;
@@ -674,7 +671,6 @@
       }
       container.innerHTML = cardsHtml;
 
-      // ഭക്ഷണ ഷെഡ്യൂൾ
       const { data: foodRoutines } = await db.from('food_routine').select('*').eq('phone', phone);
       if(foodRoutines && foodRoutines.length > 0) {
         foodCard.classList.remove('hidden');
@@ -856,7 +852,7 @@
     }
 
     async function addStudent(e) {
-      e.preventDefault();
+      if (e) e.preventDefault();
       const { error } = await db.from('students').insert([{
         name: document.getElementById('stu-name').value,
         class: document.getElementById('stu-class').value,
@@ -865,7 +861,9 @@
       if(error) alert(error.message);
       else {
         alert("Student Added!");
-        e.target.reset();
+        document.getElementById('stu-name').value = '';
+        document.getElementById('stu-class').value = '';
+        document.getElementById('stu-phone').value = '';
         loadStudentsDirectory();
       }
     }
@@ -887,7 +885,7 @@
     }
 
     async function saveEditedStudent(e) {
-      e.preventDefault();
+      if (e) e.preventDefault();
       const id = document.getElementById('edit-stu-id').value;
       const { error } = await db.from('students').update({
         name: document.getElementById('edit-stu-name').value,
@@ -931,14 +929,15 @@
     }
 
     async function publishNotice(e) {
-      e.preventDefault();
+      if (e) e.preventDefault();
       const title = document.getElementById('notice-title').value;
       const message = document.getElementById('notice-body').value;
       const { error } = await db.from('notices').insert([{ title, message }]);
       if(error) alert("Error: " + error.message);
       else {
         alert("Notice published!");
-        e.target.reset();
+        document.getElementById('notice-title').value = '';
+        document.getElementById('notice-body').value = '';
         loadNotices();
       }
     }
@@ -1022,7 +1021,7 @@
     }
 
     async function saveEditedFood(e) {
-      e.preventDefault();
+      if (e) e.preventDefault();
       const id = document.getElementById('edit-food-id').value;
       const { error } = await db.from('food_routine').update({
         house_no: document.getElementById('edit-food-no').value,
@@ -1044,7 +1043,7 @@
     }
 
     async function addFoodHouse(e) {
-      e.preventDefault();
+      if (e) e.preventDefault();
       const { error } = await db.from('food_routine').insert([{
         house_no: document.getElementById('food-house-no').value,
         family_name: document.getElementById('food-family-name').value,
@@ -1053,7 +1052,13 @@
         allocated_date: new Date().toISOString().split('T')[0]
       }]);
       if(error) alert("Error: " + error.message);
-      else { alert("House added!"); e.target.reset(); loadFoodSchedule(); }
+      else { 
+        alert("House added!"); 
+        document.getElementById('food-house-no').value = '';
+        document.getElementById('food-family-name').value = '';
+        document.getElementById('food-phone').value = '';
+        loadFoodSchedule(); 
+      }
     }
 
     // --- TEACHERS & FEES ---
@@ -1074,14 +1079,20 @@
     }
 
     async function addTeacher(e) {
-      e.preventDefault();
+      if (e) e.preventDefault();
       const { error } = await db.from('teachers').insert([{
         name: document.getElementById('tea-name').value,
         designation: document.getElementById('tea-desig').value,
         phone: document.getElementById('tea-phone').value
       }]);
       if(error) alert(error.message);
-      else { alert("Teacher Added!"); e.target.reset(); loadTeachers(); }
+      else { 
+        alert("Teacher Added!"); 
+        document.getElementById('tea-name').value = '';
+        document.getElementById('tea-desig').value = '';
+        document.getElementById('tea-phone').value = '';
+        loadTeachers(); 
+      }
     }
 
     async function loadFees() {
@@ -1106,7 +1117,7 @@
     }
 
     async function addFeePayment(e) {
-      e.preventDefault();
+      if (e) e.preventDefault();
       const { error } = await db.from('fee_payments').insert([{
         student_id: document.getElementById('fee-student-select').value,
         month: document.getElementById('fee-month').value,
@@ -1115,7 +1126,12 @@
         payment_date: new Date().toISOString().split('T')[0]
       }]);
       if(error) alert(error.message);
-      else { alert("Fee recorded!"); e.target.reset(); loadFees(); }
+      else { 
+        alert("Fee recorded!"); 
+        document.getElementById('fee-month').value = '';
+        document.getElementById('fee-amount').value = '';
+        loadFees(); 
+      }
     }
 
     function sendFeeReceiptMalayalam(phone, name, month, amount) {
@@ -1139,7 +1155,7 @@
             <td class="p-2 border-r text-center">${r.can_food ? '✅' : '❌'}</td>
             <td class="p-2 border-r text-center">${r.can_notices ? '✅' : '❌'}</td>
             <td class="p-2 text-center">
-              ${r.email.toLowerCase() !== MASTER_ADMIN_EMAIL.toLowerCase() ? `<button onclick="deleteStaffRole(${r.id})" class="text-rose-600 font-bold hover:underline">Delete</button>` : '<span class="text-gray-400 font-bold">Super Admin</span>'}
+              <button onclick="deleteStaffRole(${r.id})" class="text-rose-600 font-bold hover:underline">Delete</button>
             </td>
           </tr>
         `;
@@ -1147,7 +1163,7 @@
     }
 
     async function addStaffRole(e) {
-      e.preventDefault();
+      if (e) e.preventDefault();
       const email = document.getElementById('role-email').value.trim();
       const role = document.getElementById('role-type').value;
       const can_attendance = document.getElementById('perm-att').checked;
@@ -1160,7 +1176,11 @@
       }], { onConflict: 'email' });
 
       if(error) alert("Error: " + error.message);
-      else { alert("Staff permissions updated!"); e.target.reset(); loadStaffRoles(); }
+      else { 
+        alert("Staff permissions updated!"); 
+        document.getElementById('role-email').value = '';
+        loadStaffRoles(); 
+      }
     }
 
     async function deleteStaffRole(id) {
