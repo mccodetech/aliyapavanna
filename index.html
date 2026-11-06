@@ -46,15 +46,12 @@
         </button>
       </form>
 
-      <!-- Parent Form -->
+      <!-- Parent Form (MOBILE NUMBER ONLY) -->
       <form id="gate-parent-form" onsubmit="handleParentAuth(event)" class="space-y-3 hidden">
         <div>
-          <label class="block text-[11px] font-bold uppercase text-gray-600 mb-1">Student ID (കുട്ടിയുടെ ഐഡി)</label>
-          <input type="number" id="gate-stu-id" required placeholder="e.g. 4" class="w-full border p-2.5 text-xs sm:text-sm outline-none focus:border-blue-600">
-        </div>
-        <div>
-          <label class="block text-[11px] font-bold uppercase text-gray-600 mb-1">Parent Phone Number</label>
+          <label class="block text-[11px] font-bold uppercase text-gray-600 mb-1">Registered Phone Number</label>
           <input type="tel" id="gate-stu-phone" required placeholder="10-digit mobile number" class="w-full border p-2.5 text-xs sm:text-sm outline-none focus:border-blue-600">
+          <p class="text-[10px] text-gray-500 mt-1">മദ്റസയിൽ രജിസ്റ്റർ ചെയ്ത ഫോൺ നമ്പർ മാത്രം നൽകുക</p>
         </div>
         <p id="gate-parent-error" class="text-xs text-rose-600 hidden font-semibold"></p>
         <button type="submit" id="gate-parent-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 text-xs uppercase tracking-wider">
@@ -399,7 +396,7 @@
         </div>
       </section>
 
-      <!-- ================= STAFF ROLES (SUPER ADMIN) ================= -->
+      <!-- ================= STAFF ROLES ================= -->
       <section id="tab-roles" class="hidden space-y-4">
         <div class="bg-white border border-gray-300 p-4">
           <h2 class="text-xs font-bold uppercase mb-3 border-b pb-2">Add Sub-Admin / Usthad Permissions</h2>
@@ -450,7 +447,6 @@
     const SUPABASE_ANON_KEY = "sb_publishable_mKndkGCbbe7EOrMYgCUSCw_Wg_G_y9D";
     const db = window.supabase.createClient(SUPABASE_PROJECT_URL, SUPABASE_ANON_KEY);
 
-    // MASTER SUPER ADMIN EMAIL (ഇത് എപ്പോഴും SUPER ADMIN ആയിരിക്കും)
     const MASTER_ADMIN_EMAIL = "chembrasseri1@gmail.com";
 
     let activeUser = null; 
@@ -537,10 +533,9 @@
       }
     }
 
-    // --- PARENT AUTH ---
+    // --- PARENT AUTH (ONLY MOBILE NUMBER) ---
     async function handleParentAuth(e) {
       e.preventDefault();
-      const stuId = document.getElementById('gate-stu-id').value.trim();
       const stuPhone = document.getElementById('gate-stu-phone').value.trim();
       const errEl = document.getElementById('gate-parent-error');
       const btn = document.getElementById('gate-parent-btn');
@@ -549,23 +544,25 @@
       btn.innerText = "Verifying...";
       btn.disabled = true;
 
-      const { data, error } = await db.from('students').select('*').eq('id', stuId).eq('phone', stuPhone).maybeSingle();
+      // ഫോൺ നമ്പർ വെച്ച് കുട്ടികളെ കണ്ടെത്തുക
+      const { data, error } = await db.from('students').select('*').eq('phone', stuPhone);
 
       btn.disabled = false;
       btn.innerText = "Access Student Portal";
 
-      if(!data || error) {
-        errEl.innerText = "തെറ്റായ ID അല്ലെങ്കിൽ ഫോൺ നമ്പർ! ദയവായി പരിശോധിക്കുക.";
+      if(!data || data.length === 0 || error) {
+        errEl.innerText = "ഈ നമ്പറിൽ കുട്ടികളുടെ വിവരങ്ങൾ കണ്ടെത്തിയില്ല! ദയവായി പരിശോധിക്കുക.";
         errEl.classList.remove('hidden');
       } else {
         activeUser = {
           type: 'parent',
-          student: data
+          phone: stuPhone,
+          studentsList: data
         };
 
         document.getElementById('auth-gate').classList.add('hidden');
         setupPortalLayout();
-        renderParentProfile(data);
+        renderParentProfile(data, stuPhone);
         switchTab('parent-view');
       }
     }
@@ -592,8 +589,9 @@
       if(!activeUser) return;
 
       if(activeUser.type === 'parent') {
-        nameEl.innerText = activeUser.student.name;
-        badgeEl.innerText = `Parent (ID #${activeUser.student.id})`;
+        const studentNames = activeUser.studentsList.map(s => s.name).join(', ');
+        nameEl.innerText = studentNames;
+        badgeEl.innerText = `Parent (${activeUser.phone})`;
         menuParent.classList.remove('hidden');
       } else if(activeUser.type === 'staff') {
         nameEl.innerText = activeUser.email;
@@ -617,7 +615,7 @@
       }
     }
 
-    async function renderParentProfile(stu) {
+    async function renderParentProfile(students, phone) {
       const container = document.getElementById('parent-student-cards');
       const foodCard = document.getElementById('parent-food-card');
       const foodDetails = document.getElementById('parent-food-details');
@@ -625,34 +623,39 @@
       container.innerHTML = '<p class="text-xs text-gray-500">Loading student details...</p>';
       foodCard.classList.add('hidden');
 
-      const { data: att } = await db.from('attendance').select('status').eq('student_id', stu.id);
-      const totalDays = att ? att.length : 0;
-      const presentDays = att ? att.filter(a => a.status === 'present').length : 0;
-      const percentage = totalDays > 0 ? Math.round((presentDays / totalDays) * 100) : 0;
+      let cardsHtml = '';
+      for (let stu of students) {
+        const { data: att } = await db.from('attendance').select('status').eq('student_id', stu.id);
+        const totalDays = att ? att.length : 0;
+        const presentDays = att ? att.filter(a => a.status === 'present').length : 0;
+        const percentage = totalDays > 0 ? Math.round((presentDays / totalDays) * 100) : 0;
 
-      const { data: fees } = await db.from('fee_payments').select('*').eq('student_id', stu.id).order('id', { ascending: false });
-      let feeHtml = fees && fees.length > 0 
-        ? fees.map(f => `<span class="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 font-bold mr-1">${f.month}: ₹${f.amount}</span>`).join(' ')
-        : '<span class="text-xs text-gray-400">ഫീസ് വിവരങ്ങൾ ലഭ്യമല്ല</span>';
+        const { data: fees } = await db.from('fee_payments').select('*').eq('student_id', stu.id).order('id', { ascending: false });
+        let feeHtml = fees && fees.length > 0 
+          ? fees.map(f => `<span class="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 font-bold mr-1">${f.month}: ₹${f.amount}</span>`).join(' ')
+          : '<span class="text-xs text-gray-400">ഫീസ് വിവരങ്ങൾ ലഭ്യമല്ല</span>';
 
-      container.innerHTML = `
-        <div class="bg-white border border-gray-300 p-4 border-t-4 border-t-blue-600 shadow-sm space-y-3">
-          <div class="flex justify-between items-start border-b pb-2">
-            <div>
-              <h3 class="font-extrabold text-base text-gray-900">${stu.name}</h3>
-              <p class="text-xs text-gray-600 font-bold">ക്ലാസ്സ്: ${stu.class}</p>
+        cardsHtml += `
+          <div class="bg-white border border-gray-300 p-4 border-t-4 border-t-blue-600 shadow-sm space-y-3">
+            <div class="flex justify-between items-start border-b pb-2">
+              <div>
+                <h3 class="font-extrabold text-base text-gray-900">${stu.name}</h3>
+                <p class="text-xs text-gray-600 font-bold">ക്ലാസ്സ്: ${stu.class}</p>
+              </div>
+              <span class="text-xs bg-blue-100 text-blue-800 px-2.5 py-1 font-mono font-bold">ID: #${stu.id}</span>
             </div>
-            <span class="text-xs bg-blue-100 text-blue-800 px-2.5 py-1 font-mono font-bold">ID: #${stu.id}</span>
+            <div class="text-xs space-y-1.5">
+              <p><b>ഹാജർ നില:</b> ${presentDays} / ${totalDays} ദിവസങ്ങൾ (<span class="font-bold text-emerald-700">${percentage}%</span>)</p>
+              <div class="pt-1"><b>ഫീസ് അടവ് വിവരങ്ങൾ:</b></div>
+              <div class="flex flex-wrap gap-1">${feeHtml}</div>
+            </div>
           </div>
-          <div class="text-xs space-y-1.5">
-            <p><b>ഹാജർ നില:</b> ${presentDays} / ${totalDays} ദിവസങ്ങൾ (<span class="font-bold text-emerald-700">${percentage}%</span>)</p>
-            <div class="pt-1"><b>ഫീസ് അടവ് വിവരങ്ങൾ:</b></div>
-            <div class="flex flex-wrap gap-1">${feeHtml}</div>
-          </div>
-        </div>
-      `;
+        `;
+      }
+      container.innerHTML = cardsHtml;
 
-      const { data: foodRoutines } = await db.from('food_routine').select('*').eq('phone', stu.phone);
+      // ഭക്ഷണ ഷെഡ്യൂൾ
+      const { data: foodRoutines } = await db.from('food_routine').select('*').eq('phone', phone);
       if(foodRoutines && foodRoutines.length > 0) {
         foodCard.classList.remove('hidden');
         foodDetails.innerHTML = '';
