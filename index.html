@@ -214,14 +214,21 @@
 
     <!-- ================= DAILY ATTENDANCE ================= -->
 <section id="tab-attendance" class="space-y-3">
-  <div class="bg-white border border-gray-300 p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
-    <div>
-      <h2 class="text-xs sm:text-sm font-bold uppercase text-gray-900">Daily Attendance Register</h2>
-      <p class="text-[11px] text-gray-500">Date: <b id="att-current-date"></b></p>
+  <div class="bg-white border border-gray-300 p-3 sm:p-4 flex flex-col gap-3 shadow-sm">
+    <div class="flex justify-between items-center">
+      <div>
+        <h2 class="text-xs sm:text-sm font-bold uppercase text-gray-900">Daily Attendance Register</h2>
+        <p class="text-[11px] text-gray-500">Date: <b id="att-current-date"></b></p>
+      </div>
+      <!-- ക്ലാസ് ഫിൽട്ടർ ഡ്രോപ്പ്ഡൗൺ -->
+      <select id="att-class-filter" onchange="renderAttendanceList()" class="border border-gray-300 p-1.5 text-xs font-bold bg-gray-50 outline-none">
+        <option value="all">All Classes (എല്ലാ ക്ലാസും)</option>
+      </select>
     </div>
-    <button onclick="markAllStudentsPresent()" class="w-full sm:w-auto bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-3 py-2 text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-sm">
+
+    <button onclick="markAllStudentsPresent()" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-3 py-2 text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-sm">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
-      Mark All Present
+      Mark Selected Class Present
     </button>
   </div>
 
@@ -751,26 +758,52 @@
       if(tabId === 'roles') loadStaffRoles();
     }
 
-    // --- DAILY ATTENDANCE WITH CHECKBOX ---
+    let currentAttMap = {};
+
+// --- DAILY ATTENDANCE WITH CLASS FILTER ---
 async function loadAttendanceTab() {
   await loadStudentsListCache();
+  
+  // 1. ലഭ്യമായ എല്ലാ ക്ലാസുകളും ഡ്രോപ്പ്ഡൗണിൽ നിറയ്ക്കുന്നു
+  const classFilter = document.getElementById('att-class-filter');
+  const uniqueClasses = [...new Set(cachedStudents.map(s => s.class))].filter(Boolean);
+  
+  const currentSelected = classFilter.value || 'all';
+  classFilter.innerHTML = '<option value="all">All Classes (എല്ലാ ക്ലാസും)</option>';
+  uniqueClasses.forEach(c => {
+    classFilter.innerHTML += `<option value="${c}">Class ${c}</option>`;
+  });
+  classFilter.value = currentSelected;
+
+  // 2. ഇന്നത്തെ ഹാജർ വിവരങ്ങൾ എടുക്കുന്നു
+  const today = new Date().toISOString().split('T')[0];
+  const { data: todayAtt } = await db.from('attendance').select('*').eq('date', today);
+  currentAttMap = {};
+  (todayAtt || []).forEach(a => {
+    currentAttMap[a.student_id] = a.status;
+  });
+
+  renderAttendanceList();
+}
+
+function renderAttendanceList() {
   const tbody = document.getElementById('attendance-table-body');
   tbody.innerHTML = '';
 
-  if (cachedStudents.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-500">Kuttikale cherthittilla.</td></tr>`;
+  const selectedClass = document.getElementById('att-class-filter').value;
+  
+  // ഫിൽട്ടർ ചെയ്ത കുട്ടികൾ
+  const filteredStudents = selectedClass === 'all' 
+    ? cachedStudents 
+    : cachedStudents.filter(s => String(s.class) === String(selectedClass));
+
+  if (filteredStudents.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-500">ഈ ക്ലാസിൽ കുട്ടികളില്ല.</td></tr>`;
     return;
   }
 
-  const today = new Date().toISOString().split('T')[0];
-  const { data: todayAtt } = await db.from('attendance').select('*').eq('date', today);
-  const attMap = {};
-  (todayAtt || []).forEach(a => {
-    attMap[a.student_id] = a.status;
-  });
-
-  cachedStudents.forEach(s => {
-    const isPresent = attMap[s.id] === 'present';
+  filteredStudents.forEach(s => {
+    const isPresent = currentAttMap[s.id] === 'present';
     tbody.innerHTML += `
       <tr class="border-b hover:bg-gray-50">
         <td class="p-2 border-r text-center font-mono font-bold text-gray-500 text-[11px]">#${s.id}</td>
@@ -801,15 +834,27 @@ async function toggleAttendanceCheckbox(studentId, isChecked) {
   if (error) {
     alert("Error: " + error.message);
     document.getElementById(`att-check-${studentId}`).checked = !isChecked;
+  } else {
+    currentAttMap[studentId] = status;
   }
 }
 
 async function markAllStudentsPresent() {
-  if (cachedStudents.length === 0) return;
-  if (!confirm("Muzhuvan kuttikalkkum innathe hajar (Present) nalkano?")) return;
+  const selectedClass = document.getElementById('att-class-filter').value;
+  const targetStudents = selectedClass === 'all' 
+    ? cachedStudents 
+    : cachedStudents.filter(s => String(s.class) === String(selectedClass));
+
+  if (targetStudents.length === 0) return;
+  
+  const msg = selectedClass === 'all' 
+    ? "എല്ലാ ക്ലാസിലെയും കുട്ടികൾക്ക് ഹാജർ നൽകണോ?" 
+    : `ക്ലാസ് ${selectedClass}-ലെ മുഴുവൻ കുട്ടികൾക്കും ഹാജർ നൽകണോ?`;
+
+  if (!confirm(msg)) return;
 
   const today = new Date().toISOString().split('T')[0];
-  const records = cachedStudents.map(s => ({
+  const records = targetStudents.map(s => ({
     student_id: s.id,
     date: today,
     status: 'present'
@@ -820,8 +865,9 @@ async function markAllStudentsPresent() {
   if (error) {
     alert("Error: " + error.message);
   } else {
-    alert("Muzhuvan kuttikaludeyum hajar rekhappeduthi!");
-    cachedStudents.forEach(s => {
+    alert("ഹാജർ രേഖപ്പെടുത്തി കഴിഞ്ഞു!");
+    targetStudents.forEach(s => {
+      currentAttMap[s.id] = 'present';
       const box = document.getElementById(`att-check-${s.id}`);
       if (box) box.checked = true;
     });
