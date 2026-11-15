@@ -228,17 +228,12 @@
           <div class="flex justify-between items-center">
             <div>
               <h2 class="text-xs sm:text-sm font-bold uppercase text-gray-900">Daily Attendance Register</h2>
-              <p class="text-[11px] text-gray-500">Date: <b id="att-current-date"></b></p>
+              <p class="text-[11px] text-gray-500">Date: <b id="att-current-date"></b> <span class="text-emerald-700 font-semibold">(Auto-Saved)</span></p>
             </div>
-            <select id="att-class-filter" onchange="renderAttendanceList()" class="border border-gray-300 p-1.5 text-xs font-bold bg-gray-50 outline-none">
+            <select id="att-class-filter" onchange="handleAttClassChange()" class="border border-gray-300 p-1.5 text-xs font-bold bg-gray-50 outline-none">
               <option value="all">All Classes (എല്ലാ ക്ലാസും)</option>
             </select>
           </div>
-
-          <button onclick="markAllStudentsPresent()" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-3 py-2 text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-sm">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
-            Mark Selected Class Present
-          </button>
         </div>
 
         <div class="bg-white border border-gray-300 overflow-hidden shadow-sm">
@@ -248,14 +243,18 @@
                 <th class="p-2 border-r w-10 text-center">ID</th>
                 <th class="p-2 border-r">Name</th>
                 <th class="p-2 border-r w-14 text-center">Class</th>
-                <th class="p-2 w-16 text-center">Status</th>
+                <th class="p-2 w-20 text-center">
+                  <label class="inline-flex flex-col items-center cursor-pointer select-none" title="Select / Deselect All">
+                    <span class="text-[9px] font-extrabold text-gray-700 mb-0.5">ALL TICK</span>
+                    <input type="checkbox" id="att-select-all-box" onchange="toggleAllStudentsAttendance(this.checked)" class="w-4 h-4 accent-emerald-600 cursor-pointer">
+                  </label>
+                </th>
               </tr>
             </thead>
             <tbody id="attendance-table-body"></tbody>
           </table>
         </div>
       </section>
-
       <!-- ================= EXAM MARKS & SUBJECTS ================= -->
       <section id="tab-marks" class="hidden space-y-4">
         <!-- 1. Add Subject for Class -->
@@ -1177,11 +1176,16 @@
     // ==========================================
     let currentAttMap = {};
 
+    // ==========================================
+    // DAILY ATTENDANCE WITH AUTO-TICK & HEADER CHECKBOX
+    // ==========================================
+    let currentAttMap = {};
+
     async function loadAttendanceTab() {
       await loadStudentsListCache();
       
       const classFilter = document.getElementById('att-class-filter');
-      const uniqueClasses = [...new Set(cachedStudents.map(s => s.class))].filter(Boolean);
+      const uniqueClasses = [...new Set(cachedStudents.map(s => s.class))].filter(Boolean).sort();
       
       const currentSelected = classFilter.value || 'all';
       classFilter.innerHTML = '<option value="all">All Classes (എല്ലാ ക്ലാസും)</option>';
@@ -1201,11 +1205,41 @@
         currentAttMap[a.student_id] = a.status;
       });
 
+      await handleAttClassChange();
+    }
+
+    // ക്ലാസ് തിരഞ്ഞെടുക്കുമ്പോൾ ഹാജർ രേഖപ്പെടുത്തിയിട്ടില്ലെങ്കിൽ തനിയെ All-Tick (Present) ആക്കുന്നു
+    async function handleAttClassChange() {
+      const selectedClass = document.getElementById('att-class-filter').value;
+      const filteredStudents = selectedClass === 'all' 
+        ? cachedStudents 
+        : cachedStudents.filter(s => String(s.class) === String(selectedClass));
+
+      // ഇതുവരെ ഇന്നത്തെ ഹാജർ മാർക്ക് ചെയ്യാത്ത കുട്ടികളെ കണ്ടെത്തുന്നു
+      const unmarkedStudents = filteredStudents.filter(s => currentAttMap[s.id] === undefined);
+
+      if (unmarkedStudents.length > 0) {
+        const today = new Date().toISOString().split('T')[0];
+        const autoRecords = unmarkedStudents.map(s => ({
+          student_id: s.id,
+          date: today,
+          status: 'present'
+        }));
+
+        const { error } = await db.from('attendance').upsert(autoRecords, { onConflict: 'student_id,date' });
+        if (!error) {
+          unmarkedStudents.forEach(s => {
+            currentAttMap[s.id] = 'present';
+          });
+        }
+      }
+
       renderAttendanceList();
     }
 
     function renderAttendanceList() {
       const tbody = document.getElementById('attendance-table-body');
+      const selectAllBox = document.getElementById('att-select-all-box');
       tbody.innerHTML = '';
 
       const selectedClass = document.getElementById('att-class-filter').value;
@@ -1215,13 +1249,18 @@
 
       if (filteredStudents.length === 0) {
         tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-500">ഈ ക്ലാസിൽ കുട്ടികളില്ല.</td></tr>`;
+        if (selectAllBox) selectAllBox.checked = false;
         return;
       }
 
+      let allArePresent = true;
+
       filteredStudents.forEach(s => {
         const isPresent = currentAttMap[s.id] === 'present';
+        if (!isPresent) allArePresent = false;
+
         tbody.innerHTML += `
-          <tr class="border-b hover:bg-gray-50">
+          <tr class="border-b hover:bg-gray-50 ${!isPresent ? 'bg-rose-50/40' : ''}" id="att-row-${s.id}">
             <td class="p-2 border-r text-center font-mono font-bold text-gray-500 text-[11px]">#${s.id}</td>
             <td class="p-2 border-r font-medium truncate">${s.name}</td>
             <td class="p-2 border-r text-center font-bold text-[11px]">${s.class}</td>
@@ -1231,11 +1270,15 @@
                 id="att-check-${s.id}" 
                 onchange="toggleAttendanceCheckbox(${s.id}, this.checked)"
                 ${isPresent ? 'checked' : ''} 
-                class="w-5 h-5 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500 cursor-pointer accent-emerald-600 align-middle">
+                class="w-5 h-5 text-emerald-600 border-gray-300 cursor-pointer accent-emerald-600 align-middle">
             </td>
           </tr>
         `;
       });
+
+      if (selectAllBox) {
+        selectAllBox.checked = allArePresent;
+      }
     }
 
     async function toggleAttendanceCheckbox(studentId, isChecked) {
@@ -1252,28 +1295,31 @@
         document.getElementById(`att-check-${studentId}`).checked = !isChecked;
       } else {
         currentAttMap[studentId] = status;
+        const row = document.getElementById(`att-row-${studentId}`);
+        if (row) {
+          if (isChecked) row.classList.remove('bg-rose-50/40');
+          else row.classList.add('bg-rose-50/40');
+        }
+        updateSelectAllHeaderState();
       }
     }
 
-    async function markAllStudentsPresent() {
+    // മുകളിലുള്ള ALL TICK ചെക്ക്ബോക്സ് ക്ലിക്ക് ചെയ്യുമ്പോൾ എല്ലാവരെയും Present അല്ലെങ്കിൽ Absent ആക്കുന്നു
+    async function toggleAllStudentsAttendance(isChecked) {
       const selectedClass = document.getElementById('att-class-filter').value;
       const targetStudents = selectedClass === 'all' 
         ? cachedStudents 
         : cachedStudents.filter(s => String(s.class) === String(selectedClass));
 
       if (targetStudents.length === 0) return;
-      
-      const msg = selectedClass === 'all' 
-        ? "എല്ലാ ക്ലാസിലെയും കുട്ടികൾക്ക് ഹാജർ നൽകണോ?" 
-        : `ക്ലാസ് ${selectedClass}-ലെ മുഴുവൻ കുട്ടികൾക്കും ഹാജർ നൽകണോ?`;
 
-      if (!confirm(msg)) return;
-
+      const status = isChecked ? 'present' : 'absent';
       const today = new Date().toISOString().split('T')[0];
+
       const records = targetStudents.map(s => ({
         student_id: s.id,
         date: today,
-        status: 'present'
+        status: status
       }));
 
       const { error } = await db.from('attendance').upsert(records, { onConflict: 'student_id,date' });
@@ -1281,12 +1327,27 @@
       if (error) {
         alert("Error: " + error.message);
       } else {
-        alert("ഹാജർ രേഖപ്പെടുത്തി കഴിഞ്ഞു!");
         targetStudents.forEach(s => {
-          currentAttMap[s.id] = 'present';
+          currentAttMap[s.id] = status;
           const box = document.getElementById(`att-check-${s.id}`);
-          if (box) box.checked = true;
+          const row = document.getElementById(`att-row-${s.id}`);
+          if (box) box.checked = isChecked;
+          if (row) {
+            if (isChecked) row.classList.remove('bg-rose-50/40');
+            else row.classList.add('bg-rose-50/40');
+          }
         });
+      }
+    }
+
+    function updateSelectAllHeaderState() {
+      const selectedClass = document.getElementById('att-class-filter').value;
+      const filteredStudents = selectedClass === 'all' 
+        ? cachedStudents 
+        : cachedStudents.filter(s => String(s.class) === String(selectedClass));
+      const selectAllBox = document.getElementById('att-select-all-box');
+      if (selectAllBox && filteredStudents.length > 0) {
+        selectAllBox.checked = filteredStudents.every(s => currentAttMap[s.id] === 'present');
       }
     }
 
