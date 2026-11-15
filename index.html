@@ -9,6 +9,15 @@
   <style>
     * { border-radius: 0px !important; }
     .table-scroll { -webkit-overflow-scrolling: touch; }
+    /* നമ്പർ ഇൻപുട്ടുകളിലെ സൈഡ് ആരോകൾ (Spinners) ഒഴിവാക്കുന്നു */
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button { 
+      -webkit-appearance: none; 
+      margin: 0; 
+    }
+    input[type=number] {
+      -moz-appearance: textfield;
+    }
   </style>
 </head>
 <body class="bg-gray-100 flex min-h-screen font-sans text-gray-800 antialiased">
@@ -204,7 +213,7 @@
       <section id="tab-parent-view" class="hidden space-y-4">
         <div class="bg-white border border-gray-300 p-4">
           <h2 class="text-xs sm:text-sm font-bold uppercase mb-1">Student Details</h2>
-          <p class="text-xs text-gray-500">ഹാജർ, പരീക്ഷാ മാർക്കുകൾ, ഫീസ്, ഭക്ഷണ വിവരങ്ങൾ താഴെ കാണാം:</p>
+          <p class="text-xs text-gray-500">ഹാജർ, പരീക്ഷാ മാർക്കുകൾ, റാങ്ക്, ഫീസ്, ഭക്ഷണ വിവരങ്ങൾ താഴെ കാണാം:</p>
         </div>
         <div id="parent-student-cards" class="grid sm:grid-cols-2 gap-4"></div>
         <div id="parent-food-card" class="bg-white border p-4 hidden">
@@ -247,7 +256,7 @@
         </div>
       </section>
 
-      <!-- ================= EXAM MARKS & SUBJECTS (NEW) ================= -->
+      <!-- ================= EXAM MARKS & SUBJECTS ================= -->
       <section id="tab-marks" class="hidden space-y-4">
         <!-- 1. Add Subject for Class -->
         <div class="bg-white border border-gray-300 p-4 shadow-sm">
@@ -257,7 +266,7 @@
           <form onsubmit="addSubject(event)" class="flex flex-col sm:grid sm:grid-cols-4 gap-2">
             <input type="text" id="sub-class" placeholder="Class (e.g. 5 or 10)" required class="w-full border p-2 text-xs outline-none focus:border-blue-600">
             <input type="text" id="sub-name" placeholder="Subject Name (e.g. Quran, Fiqh)" required class="w-full border p-2 text-xs outline-none focus:border-blue-600">
-            <input type="number" id="sub-max" value="100" placeholder="Max Marks (e.g. 100)" required class="w-full border p-2 text-xs outline-none focus:border-blue-600">
+            <input type="text" inputmode="numeric" pattern="[0-9]*" id="sub-max" value="100" placeholder="Max Marks (e.g. 100)" required class="w-full border p-2 text-xs outline-none focus:border-blue-600">
             <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-2 px-3 text-xs uppercase">
               + Add Subject
             </button>
@@ -269,8 +278,8 @@
         <!-- 2. Enter Student Marks -->
         <div class="bg-white border border-gray-300 p-4 space-y-4 shadow-sm">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b pb-2">
-            <h2 class="text-xs sm:text-sm font-bold uppercase text-slate-900">2. Exam Marks Register (മാർക്ക് എൻട്രി)</h2>
-            <button onclick="saveAllMarks()" class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-4 py-2 text-xs uppercase tracking-wider">
+            <h2 class="text-xs sm:text-sm font-bold uppercase text-slate-900">2. Exam Marks & Rank Register</h2>
+            <button onclick="saveAllMarks()" class="w-full sm:w-auto bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-4 py-2 text-xs uppercase tracking-wider">
               ✓ Save All Marks (സേവ് ചെയ്യുക)
             </button>
           </div>
@@ -716,7 +725,7 @@
       }
     }
 
-    // --- RENDER PARENT PROFILE WITH MARKS ---
+    // --- RENDER PARENT PROFILE WITH MARKS, TOTAL & RANK ---
     async function renderParentProfile(students, phone) {
       const container = document.getElementById('parent-student-cards');
       const foodCard = document.getElementById('parent-food-card');
@@ -724,6 +733,10 @@
 
       container.innerHTML = '<p class="text-xs text-gray-500">Loading student details...</p>';
       foodCard.classList.add('hidden');
+
+      // റാങ്ക് കണക്കാക്കാൻ ക്ലാസ്സിലെ എല്ലാ കുട്ടികളുടെയും മാർക്കുകൾ എടുക്കുന്നു
+      const { data: allStudents } = await db.from('students').select('id, class');
+      const { data: allMarks } = await db.from('exam_marks').select('student_id, exam_name, marks_obtained, subjects(subject_name, max_marks)');
 
       let cardsHtml = '';
       for (let stu of students) {
@@ -739,22 +752,61 @@
           ? fees.map(f => `<span class="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 font-bold mr-1">${f.month}: ₹${f.amount}</span>`).join(' ')
           : '<span class="text-xs text-gray-400">ഫീസ് വിവരങ്ങൾ ലഭ്യമല്ല</span>';
 
-        // Exam Marks
-        const { data: marks } = await db
-          .from('exam_marks')
-          .select('exam_name, marks_obtained, subjects(subject_name, max_marks)')
-          .eq('student_id', stu.id);
+        // Exam Marks grouped by Exam Name with Total & Rank
+        const stuMarks = (allMarks || []).filter(m => m.student_id === stu.id);
+        const exams = [...new Set(stuMarks.map(m => m.exam_name))];
 
         let marksHtml = '<span class="text-xs text-gray-400">മാർക്കുകൾ രേഖപ്പെടുത്തിയിട്ടില്ല</span>';
-        if (marks && marks.length > 0) {
-          marksHtml = `<div class="space-y-1 mt-1 border-t pt-1">`;
-          marks.forEach(m => {
-            const subName = m.subjects ? m.subjects.subject_name : 'Subject';
-            const maxM = m.subjects ? m.subjects.max_marks : 100;
+        if (exams.length > 0) {
+          marksHtml = `<div class="space-y-2 mt-1">`;
+          const classmates = (allStudents || []).filter(c => String(c.class) === String(stu.class));
+
+          exams.forEach(examName => {
+            const examSpecificMarks = stuMarks.filter(m => m.exam_name === examName);
+            let totalObtained = 0;
+            let totalMax = 0;
+
+            let subRows = '';
+            examSpecificMarks.forEach(m => {
+              const subName = m.subjects ? m.subjects.subject_name : 'Subject';
+              const maxM = m.subjects ? Number(m.subjects.max_marks) : 100;
+              totalObtained += Number(m.marks_obtained);
+              totalMax += maxM;
+
+              subRows += `
+                <div class="flex justify-between text-[11px] bg-white px-2 py-1 border-b border-gray-200">
+                  <span>${subName}</span>
+                  <span class="font-mono font-bold text-slate-800">${m.marks_obtained} / ${maxM}</span>
+                </div>`;
+            });
+
+            // ക്ലാസ്സിലെ റാങ്ക് കണക്കാക്കുന്നു
+            const classTotals = classmates.map(cm => {
+              const cmMarks = (allMarks || []).filter(m => m.student_id === cm.id && m.exam_name === examName);
+              const sum = cmMarks.reduce((acc, cur) => acc + Number(cur.marks_obtained), 0);
+              return { id: cm.id, total: sum, hasMarks: cmMarks.length > 0 };
+            }).filter(x => x.hasMarks).sort((a, b) => b.total - a.total);
+
+            let rankDisplay = '-';
+            const myIndex = classTotals.findIndex(x => x.id === stu.id);
+            if (myIndex !== -1) {
+              // തുല്യ മാർക്കാണെങ്കിൽ ഒരേ റാങ്ക് നൽകുന്നു
+              const myTotal = classTotals[myIndex].total;
+              const rankNum = classTotals.findIndex(x => x.total === myTotal) + 1;
+              rankDisplay = `#${rankNum}`;
+            }
+
             marksHtml += `
-              <div class="flex justify-between text-[11px] bg-gray-50 px-2 py-1 border border-gray-200">
-                <span><b>${subName}</b> (${m.exam_name})</span>
-                <span class="font-mono font-bold text-blue-700">${m.marks_obtained} / ${maxM}</span>
+              <div class="border border-gray-300 bg-gray-50">
+                <div class="bg-slate-800 text-white px-2 py-1 text-[11px] font-bold flex justify-between items-center">
+                  <span>${examName}</span>
+                  <span class="bg-amber-500 text-slate-950 px-1.5 py-0.5 text-[10px] font-extrabold">RANK: ${rankDisplay}</span>
+                </div>
+                ${subRows}
+                <div class="flex justify-between text-[11px] bg-blue-50 px-2 py-1.5 font-extrabold text-blue-900">
+                  <span>TOTAL MARKS</span>
+                  <span class="font-mono">${totalObtained} / ${totalMax}</span>
+                </div>
               </div>`;
           });
           marksHtml += `</div>`;
@@ -769,9 +821,9 @@
               </div>
               <span class="text-xs bg-blue-100 text-blue-800 px-2.5 py-1 font-mono font-bold">ID: #${stu.id}</span>
             </div>
-            <div class="text-xs space-y-1.5">
+            <div class="text-xs space-y-2">
               <p><b>ഹാജർ നില:</b> ${presentDays} / ${totalDays} ദിവസങ്ങൾ (<span class="font-bold text-emerald-700">${percentage}%</span>)</p>
-              <div class="pt-1"><b>പരീക്ഷാ മാർക്കുകൾ:</b></div>
+              <div class="pt-1"><b>പരീക്ഷാ ഫലം (Marks & Rank):</b></div>
               ${marksHtml}
               <div class="pt-1"><b>ഫീസ് അടവ് വിവരങ്ങൾ:</b></div>
               <div class="flex flex-wrap gap-1">${feeHtml}</div>
@@ -829,7 +881,7 @@
         notices: "Notice Board",
         'parent-view': "Student Profile",
         attendance: "Daily Attendance Register",
-        marks: "Exam Marks & Subjects",
+        marks: "Exam Marks & Rank",
         'students-dir': "Students Directory (Admin)",
         food: "Food Schedule",
         dashboard: "Dashboard",
@@ -863,7 +915,7 @@
     }
 
     // ==========================================
-    // EXAM MARKS & SUBJECTS FUNCTIONS (NEW)
+    // EXAM MARKS, LIVE TOTAL & AUTO RANK
     // ==========================================
     async function loadMarksTab() {
       await loadStudentsListCache();
@@ -876,7 +928,6 @@
         classSelect.innerHTML += `<option value="${c}">Class ${c}</option>`;
       });
 
-      // ഉസ്താദിന് പ്രത്യേക ക്ലാസ് നൽകിയിട്ടുണ്ടെങ്കിൽ അത് ഓട്ടോ-സെലക്ട് ചെയ്യുന്നു
       if (activeUser && activeUser.role === 'usthad' && activeUser.permissions && activeUser.permissions.assigned_class && activeUser.permissions.assigned_class !== 'all') {
         classSelect.value = activeUser.permissions.assigned_class;
         document.getElementById('sub-class').value = activeUser.permissions.assigned_class;
@@ -893,7 +944,7 @@
       if (e) e.preventDefault();
       const className = document.getElementById('sub-class').value.trim();
       const subjectName = document.getElementById('sub-name').value.trim();
-      const maxMarks = document.getElementById('sub-max').value;
+      const maxMarks = Number(document.getElementById('sub-max').value) || 100;
 
       const { error } = await db.from('subjects').insert([
         { class_name: className, subject_name: subjectName, max_marks: maxMarks }
@@ -902,7 +953,7 @@
       if (error) {
         alert("Error: " + error.message);
       } else {
-        alert(`Class ${className}-ലേക്ക് "${subjectName}" എന്ന വിഷയം ചേർത്തു!`);
+        alert(`Class ${className}-ലേക്ക് "${subjectName}" (Max: ${maxMarks}) എന്ന വിഷയം ചേർത്തു!`);
         document.getElementById('sub-name').value = '';
         document.getElementById('mark-class-select').value = className;
         loadMarkEntrySheet();
@@ -930,25 +981,21 @@
         return;
       }
 
-      // 1. ആ ക്ലാസ്സിലെ വിഷയങ്ങൾ
       const { data: subjects } = await db
         .from('subjects')
         .select('*')
         .eq('class_name', selectedClass)
         .order('id', { ascending: true });
 
-      // 2. ആ ക്ലാസ്സിലെ കുട്ടികൾ
       const classStudents = cachedStudents
         .filter(s => String(s.class) === String(selectedClass))
         .sort((a, b) => a.name.localeCompare(b.name));
 
-      // 3. നിലവിലുള്ള മാർക്കുകൾ
       const { data: existingMarks } = await db
         .from('exam_marks')
         .select('*')
         .eq('exam_name', selectedExam);
 
-      // വിഷയങ്ങളുടെ ബാഡ്ജുകൾ കാണിക്കുന്നു (ഡിലീറ്റ് ബട്ടൺ സഹിതം)
       badgeContainer.innerHTML = '';
       if (subjects && subjects.length > 0) {
         subjects.forEach(sub => {
@@ -972,36 +1019,107 @@
         return;
       }
 
-      // ടേബിൾ ഹെഡർ നിർമ്മിക്കുന്നു
+      // ആകെ പരമാവധി മാർക്ക് കണക്കാക്കുന്നു
+      const totalMaxPossible = subjects.reduce((sum, sub) => sum + Number(sub.max_marks), 0);
+
+      // ടേബിൾ ഹെഡർ (ID, Name, Subjects, Total, Rank)
       let headHTML = `<tr><th class="p-2.5 border-r w-12 text-center">ID</th><th class="p-2.5 border-r">Student Name</th>`;
       subjects.forEach(sub => {
         headHTML += `<th class="p-2.5 border-r text-center bg-blue-50 text-blue-900">${sub.subject_name} <span class="text-[10px] text-gray-500 font-normal">/${sub.max_marks}</span></th>`;
       });
-      headHTML += `<th class="p-2.5 text-center bg-gray-200">Total</th></tr>`;
+      headHTML += `<th class="p-2.5 border-r text-center bg-gray-200">Total <span class="text-[10px] text-gray-600 font-normal">/${totalMaxPossible}</span></th>`;
+      headHTML += `<th class="p-2.5 text-center bg-amber-100 text-amber-900 w-16">Rank</th></tr>`;
       thead.innerHTML = headHTML;
 
-      // ഓരോ കുട്ടിക്കും മാർക്ക് എന്റർ ചെയ്യാനുള്ള വരികൾ
       tbody.innerHTML = '';
       classStudents.forEach(stu => {
-        let rowHTML = `<tr class="border-b hover:bg-gray-50"><td class="p-2.5 border-r text-center font-mono font-bold text-gray-500">#${stu.id}</td><td class="p-2.5 border-r font-semibold">${stu.name}</td>`;
-        let rowTotal = 0;
+        let rowHTML = `<tr class="border-b hover:bg-gray-50" data-student-row="${stu.id}">
+          <td class="p-2.5 border-r text-center font-mono font-bold text-gray-500">#${stu.id}</td>
+          <td class="p-2.5 border-r font-semibold">${stu.name}</td>`;
 
         subjects.forEach(sub => {
           const found = (existingMarks || []).find(m => m.student_id === stu.id && m.subject_id === sub.id);
           const val = found ? found.marks_obtained : '';
-          if (found) rowTotal += Number(found.marks_obtained);
 
           rowHTML += `
             <td class="p-1.5 border-r text-center">
-              <input type="number" step="0.5" max="${sub.max_marks}" min="0" 
-                data-student="${stu.id}" data-subject="${sub.id}" 
+              <input type="text" inputmode="decimal"
+                data-student="${stu.id}" data-subject="${sub.id}" data-max="${sub.max_marks}"
                 value="${val}" placeholder="-"
-                class="mark-input w-20 border border-gray-300 p-1.5 text-center font-mono text-xs focus:border-blue-600 outline-none">
+                oninput="handleMarkInput(this)"
+                class="mark-input w-16 sm:w-20 border border-gray-300 p-1.5 text-center font-mono text-xs focus:border-blue-600 focus:bg-blue-50/30 outline-none">
             </td>`;
         });
 
-        rowHTML += `<td class="p-2.5 text-center font-bold font-mono bg-gray-50 text-blue-800">${rowTotal}</td></tr>`;
+        rowHTML += `<td id="stu-total-${stu.id}" class="p-2.5 border-r text-center font-extrabold font-mono bg-gray-50 text-blue-800">0</td>`;
+        rowHTML += `<td id="stu-rank-${stu.id}" class="p-2.5 text-center font-extrabold font-mono bg-amber-50/60 text-amber-900">-</td></tr>`;
         tbody.innerHTML += rowHTML;
+      });
+
+      // പേജ് ലോഡ് ആകുമ്പോൾ തന്നെ Total-ഉം Rank-ഉം കണക്കാക്കുന്നു
+      recalculateTotalsAndRanks();
+    }
+
+    // മാർക്ക് ടൈപ്പ് ചെയ്യുമ്പോൾ Max Marks പരിശോധിക്കുകയും Live Total & Rank അപ്‌ഡേറ്റ് ചെയ്യുകയും ചെയ്യുന്നു
+    function handleMarkInput(inputEl) {
+      const maxAllowed = Number(inputEl.dataset.max);
+      let rawVal = inputEl.value;
+
+      // അക്കങ്ങളും ദശാംശബിന്ദുവും മാത്രമേ അനുവദിക്കൂ
+      rawVal = rawVal.replace(/[^0-9.]/g, '');
+      inputEl.value = rawVal;
+
+      if (rawVal !== '') {
+        const numVal = Number(rawVal);
+        if (numVal > maxAllowed) {
+          alert(`പരമാവധി മാർക്ക് ${maxAllowed} ആണ്! അതിൽ കൂടുതൽ നൽകാൻ കഴിയില്ല.`);
+          inputEl.value = '';
+        }
+      }
+
+      recalculateTotalsAndRanks();
+    }
+
+    // എല്ലാ കുട്ടികളുടെയും Total കൂട്ടി തത്സമയം Rank നിശ്ചയിക്കുന്ന ഫംഗ്ഷൻ
+    function recalculateTotalsAndRanks() {
+      const rows = document.querySelectorAll('tr[data-student-row]');
+      const studentScores = [];
+
+      rows.forEach(row => {
+        const stuId = row.dataset.studentRow;
+        const inputs = row.querySelectorAll('.mark-input');
+        let sum = 0;
+        let hasAnyMark = false;
+
+        inputs.forEach(inp => {
+          if (inp.value !== '' && !isNaN(Number(inp.value))) {
+            sum += Number(inp.value);
+            hasAnyMark = true;
+          }
+        });
+
+        const totalCell = document.getElementById(`stu-total-${stuId}`);
+        if (totalCell) totalCell.innerText = sum;
+
+        studentScores.push({ stuId, sum, hasAnyMark });
+      });
+
+      // മാർക്ക് എന്റർ ചെയ്ത കുട്ടികളെ കൂടുതൽ മാർക്ക് മുതൽ കുറഞ്ഞതിലേക്ക് ക്രമീകരിക്കുന്നു
+      const rankedList = studentScores
+        .filter(s => s.hasAnyMark)
+        .sort((a, b) => b.sum - a.sum);
+
+      studentScores.forEach(s => {
+        const rankCell = document.getElementById(`stu-rank-${s.stuId}`);
+        if (!rankCell) return;
+
+        if (!s.hasAnyMark) {
+          rankCell.innerText = '-';
+        } else {
+          // തുല്യ മാർക്കുള്ളവർക്ക് ഒരേ റാങ്ക് നൽകുന്നു
+          const rankIndex = rankedList.findIndex(item => item.sum === s.sum);
+          rankCell.innerText = `#${rankIndex + 1}`;
+        }
       });
     }
 
@@ -1009,24 +1127,34 @@
       const selectedExam = document.getElementById('mark-exam-select').value;
       const inputs = document.querySelectorAll('.mark-input');
       const recordsToSave = [];
+      let hasInvalid = false;
 
       inputs.forEach(inp => {
         if (inp.value !== '') {
+          const val = Number(inp.value);
+          const max = Number(inp.dataset.max);
+          if (val > max) {
+            hasInvalid = true;
+          }
           recordsToSave.push({
             student_id: Number(inp.dataset.student),
             subject_id: Number(inp.dataset.subject),
             exam_name: selectedExam,
-            marks_obtained: Number(inp.value)
+            marks_obtained: val
           });
         }
       });
+
+      if (hasInvalid) {
+        alert("ചില വിഷയങ്ങളിൽ പരമാവധി മാർക്കിനേക്കാൾ കൂടുതൽ നൽകിയിട്ടുണ്ട്. ദയവായി തിരുത്തുക.");
+        return;
+      }
 
       if (recordsToSave.length === 0) {
         alert("സേവ് ചെയ്യാൻ മാർക്കുകൾ ഒന്നും എന്റർ ചെയ്തിട്ടില്ല!");
         return;
       }
 
-      // നിലവിലുള്ള റെക്കോർഡുകൾ അപ്‌ഡേറ്റ് ചെയ്യാൻ പഴയത് നീക്കി പുതിയത് ഇടുന്നു
       for (const rec of recordsToSave) {
         await db.from('exam_marks').delete().match({ 
           student_id: rec.student_id, 
@@ -1039,7 +1167,7 @@
       if (error) {
         alert("Error saving marks: " + error.message);
       } else {
-        alert("എല്ലാ മാർക്കുകളും വിജയകരമായി സേവ് ചെയ്തു!");
+        alert("എല്ലാ മാർക്കുകളും റാങ്കും വിജയകരമായി സേവ് ചെയ്തു!");
         loadMarkEntrySheet();
       }
     }
