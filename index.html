@@ -92,6 +92,10 @@
           <label class="block text-[10px] font-bold uppercase text-gray-600">Parent Phone</label>
           <input type="tel" id="edit-stu-phone" required class="w-full border p-2 text-xs">
         </div>
+        <div>
+          <label class="block text-[10px] font-bold uppercase text-gray-600">Monthly Fee (₹)</label>
+          <input type="number" id="edit-stu-fee" required class="w-full border p-2 text-xs">
+        </div>
         <div class="flex gap-2 pt-2">
           <button type="button" onclick="deleteStudent()" class="w-1/2 bg-rose-600 text-white font-bold py-2 text-xs uppercase">Delete</button>
           <button type="submit" class="w-1/2 bg-blue-600 text-white font-bold py-2 text-xs uppercase">Save</button>
@@ -211,9 +215,19 @@
 
       <!-- ================= PARENT VIEW ================= -->
       <section id="tab-parent-view" class="hidden space-y-4">
-        <div class="bg-white border border-gray-300 p-4">
-          <h2 class="text-xs sm:text-sm font-bold uppercase mb-1">Student Details</h2>
-          <p class="text-xs text-gray-500">ഹാജർ, പരീക്ഷാ മാർക്കുകൾ, റാങ്ക്, ഫീസ്, ഭക്ഷണ വിവരങ്ങൾ താഴെ കാണാം:</p>
+        <div class="bg-white border border-gray-300 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h2 class="text-xs sm:text-sm font-bold uppercase mb-1">Student Details</h2>
+            <p class="text-xs text-gray-500">ഹാജർ, പരീക്ഷാ മാർക്കുകൾ, റാങ്ക്, ഫീസ്, ഭക്ഷണ വിവരങ്ങൾ താഴെ കാണാം:</p>
+          </div>
+          <div class="flex items-center gap-2 bg-gray-100 p-2 border border-gray-300">
+            <label class="text-[11px] font-bold uppercase text-gray-700">Fee Year:</label>
+            <select id="parent-fee-year" onchange="reloadParentFeeView()" class="border border-gray-300 p-1 text-xs font-bold bg-white">
+              <option value="2025">2025</option>
+              <option value="2026" selected>2026</option>
+              <option value="2027">2027</option>
+            </select>
+          </div>
         </div>
         <div id="parent-student-cards" class="grid sm:grid-cols-2 gap-4"></div>
         <div id="parent-food-card" class="bg-white border p-4 hidden">
@@ -255,9 +269,9 @@
           </table>
         </div>
       </section>
+
       <!-- ================= EXAM MARKS & SUBJECTS ================= -->
       <section id="tab-marks" class="hidden space-y-4">
-        <!-- 1. Add Subject for Class -->
         <div class="bg-white border border-gray-300 p-4 shadow-sm">
           <div class="flex justify-between items-center border-b pb-2 mb-3">
             <h2 class="text-xs sm:text-sm font-bold uppercase text-slate-900">1. Add / Manage Subjects (വിഷയങ്ങൾ ചേർക്കുക)</h2>
@@ -270,11 +284,9 @@
               + Add Subject
             </button>
           </form>
-          <!-- Added Subjects Badges -->
           <div id="class-subjects-badges" class="mt-3 flex flex-wrap gap-1.5"></div>
         </div>
 
-        <!-- 2. Enter Student Marks -->
         <div class="bg-white border border-gray-300 p-4 space-y-4 shadow-sm">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b pb-2">
             <h2 class="text-xs sm:text-sm font-bold uppercase text-slate-900">2. Exam Marks & Rank Register</h2>
@@ -343,6 +355,7 @@
                   <th class="p-2.5 border-r">Name</th>
                   <th class="p-2.5 border-r">Class</th>
                   <th class="p-2.5 border-r">Parent Phone</th>
+                  <th class="p-2.5 border-r">Monthly Fee</th>
                   <th class="p-2.5 text-center">Manage</th>
                 </tr>
               </thead>
@@ -441,27 +454,118 @@
         </div>
       </section>
 
-      <!-- ================= FEES ================= -->
+      <!-- ================= FEES (UPGRADED WITH YEAR/MONTH GRID & PENDING TRACKER) ================= -->
       <section id="tab-fees" class="hidden space-y-4">
-        <div class="bg-white border border-gray-300 p-4">
-          <h2 class="text-xs font-bold uppercase mb-3 border-b pb-2">Record Fee Payment</h2>
-          <form onsubmit="addFeePayment(event)" class="flex flex-col gap-2 sm:grid sm:grid-cols-4">
-            <select id="fee-student-select" onchange="onFeeStudentChange(this.value)" required class="w-full border p-2 text-xs bg-white">
+        
+        <!-- 1. Record Fee Payment Form -->
+        <div id="fee-record-box" class="bg-white border border-gray-300 p-4 shadow-sm">
+          <h2 class="text-xs font-bold uppercase mb-3 border-b pb-2 text-slate-900">1. Record Fee Payment (ഫീസ് രേഖപ്പെടുത്തുക)</h2>
+          <form onsubmit="addFeePayment(event)" class="flex flex-col gap-2 sm:grid sm:grid-cols-5">
+            <select id="fee-student-select" onchange="onFeeStudentChange(this.value)" required class="w-full border p-2 text-xs bg-white font-semibold">
               <option value="">Select Student</option>
             </select>
-            <input type="text" id="fee-month" placeholder="Month (e.g. November)" required class="w-full border p-2 text-xs">
-            <input type="number" id="fee-amount" placeholder="Amount (₹)" required class="w-full border p-2 text-xs">
-            <button type="submit" class="w-full bg-emerald-600 text-white font-bold py-2 text-xs uppercase">Record</button>
+            <select id="fee-form-year" required class="w-full border p-2 text-xs bg-white font-bold">
+              <option value="2025">2025</option>
+              <option value="2026" selected>2026</option>
+              <option value="2027">2027</option>
+            </select>
+            <select id="fee-month" required class="w-full border p-2 text-xs bg-white font-semibold">
+              <option value="January">January</option>
+              <option value="February">February</option>
+              <option value="March">March</option>
+              <option value="April">April</option>
+              <option value="May">May</option>
+              <option value="June">June</option>
+              <option value="July">July</option>
+              <option value="August">August</option>
+              <option value="September">September</option>
+              <option value="October">October</option>
+              <option value="November" selected>November</option>
+              <option value="December">December</option>
+            </select>
+            <input type="number" id="fee-amount" placeholder="Amount (₹)" required class="w-full border p-2 text-xs font-mono font-bold">
+            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 text-xs uppercase">✓ Record Fee</button>
           </form>
         </div>
-        <div class="bg-white border border-gray-300">
-          <div class="p-3 border-b font-bold text-xs uppercase bg-gray-50">Fee History</div>
+
+        <!-- 2. Monthly Fee Tracker (Paid = Green, Pending = Red) -->
+        <div class="bg-white border border-gray-300 shadow-sm">
+          <div class="p-3 border-b bg-gray-50 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h2 class="font-bold text-xs uppercase text-slate-900">2. Student-wise Fee Status & Pending Tracker</h2>
+              <p class="text-[11px] text-gray-500">
+                <span class="inline-block w-2.5 h-2.5 bg-emerald-500 mr-1"></span>അടച്ചത് (Paid) &nbsp;&nbsp;
+                <span class="inline-block w-2.5 h-2.5 bg-rose-500 mr-1"></span>ബാക്കിയുള്ളത് (Pending - ക്ലിക്ക് ചെയ്താൽ ഫീസ് അടയ്ക്കാം)
+              </p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <select id="fee-filter-year" onchange="renderFeeMatrix()" class="border border-gray-300 p-1.5 text-xs font-bold bg-white">
+                <option value="2025">Year: 2025</option>
+                <option value="2026" selected>Year: 2026</option>
+                <option value="2027">Year: 2027</option>
+              </select>
+              <select id="fee-filter-class" onchange="renderFeeMatrix()" class="border border-gray-300 p-1.5 text-xs font-bold bg-white">
+                <option value="all">All Classes</option>
+              </select>
+              <select id="fee-filter-month" onchange="renderFeeMatrix()" class="border border-gray-300 p-1.5 text-xs font-bold bg-white">
+                <option value="all">All Months (12 മാസവും)</option>
+                <option value="January">January</option>
+                <option value="February">February</option>
+                <option value="March">March</option>
+                <option value="April">April</option>
+                <option value="May">May</option>
+                <option value="June">June</option>
+                <option value="July">July</option>
+                <option value="August">August</option>
+                <option value="September">September</option>
+                <option value="October">October</option>
+                <option value="November">November</option>
+                <option value="December">December</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Summary Strip -->
+          <div id="fee-summary-bar" class="grid grid-cols-2 sm:grid-cols-3 border-b bg-slate-50 text-xs">
+            <div class="p-2.5 border-r">
+              <span class="text-[10px] uppercase font-bold text-gray-500 block">Selected Year Collected</span>
+              <span id="fee-total-collected" class="font-mono font-extrabold text-sm text-emerald-700">₹0</span>
+            </div>
+            <div class="p-2.5 border-r">
+              <span class="text-[10px] uppercase font-bold text-gray-500 block">Selected Year Total Pending</span>
+              <span id="fee-total-pending" class="font-mono font-extrabold text-sm text-rose-600">₹0</span>
+            </div>
+            <div class="p-2.5 col-span-2 sm:col-span-1">
+              <span class="text-[10px] uppercase font-bold text-gray-500 block">Students with Pending</span>
+              <span id="fee-pending-students-count" class="font-mono font-extrabold text-sm text-slate-800">0</span>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto table-scroll">
+            <table class="w-full text-left text-xs whitespace-nowrap">
+              <thead class="bg-gray-100 border-b uppercase text-[10px]">
+                <tr>
+                  <th class="p-2.5 border-r">Student & Class</th>
+                  <th class="p-2.5 border-r text-center">Monthly Fee</th>
+                  <th class="p-2.5 border-r">Monthly Status (Jan - Dec)</th>
+                  <th class="p-2.5 border-r text-right">Pending Amount</th>
+                  <th class="p-2.5 text-center">Reminder</th>
+                </tr>
+              </thead>
+              <tbody id="fee-matrix-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 3. Recent Fee Receipts History -->
+        <div class="bg-white border border-gray-300 shadow-sm">
+          <div class="p-3 border-b font-bold text-xs uppercase bg-gray-50">3. Recent Fee Receipts (അടച്ച രസീതുകൾ)</div>
           <div class="overflow-x-auto table-scroll">
             <table class="w-full text-left text-xs whitespace-nowrap">
               <thead class="bg-gray-100 border-b uppercase text-[10px]">
                 <tr>
                   <th class="p-2 border-r">Student</th>
-                  <th class="p-2 border-r">Month</th>
+                  <th class="p-2 border-r">Month & Year</th>
                   <th class="p-2 border-r">Amount</th>
                   <th class="p-2 text-center">Receipt</th>
                 </tr>
@@ -528,10 +632,21 @@
     const SUPABASE_ANON_KEY = "sb_publishable_mKndkGCbbe7EOrMYgCUSCw_Wg_G_y9D";
     const db = window.supabase.createClient(SUPABASE_PROJECT_URL, SUPABASE_ANON_KEY);
 
+    const ALL_MONTHS = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+    const SHORT_MONTHS = {
+      January: "Jan", February: "Feb", March: "Mar", April: "Apr",
+      May: "May", June: "Jun", July: "Jul", August: "Aug",
+      September: "Sep", October: "Oct", November: "Nov", December: "Dec"
+    };
+
     let activeUser = null; 
     let currentTab = 'notices';
     let foodDataList = [];
     let cachedStudents = [];
+    let cachedFeePayments = [];
 
     // --- GATEWAY TABS ---
     function switchGateType(type) {
@@ -724,16 +839,34 @@
       }
     }
 
-    // --- RENDER PARENT PROFILE WITH MARKS, TOTAL & RANK ---
+    function reloadParentFeeView() {
+      if (activeUser && activeUser.type === 'parent') {
+        renderParentProfile(activeUser.studentsList, activeUser.phone);
+      }
+    }
+
+    //Helper to check if a student paid for a given month and year
+    function isFeePaidForMonth(feesList, monthName, yearStr) {
+      return (feesList || []).find(f => {
+        const stored = String(f.month || '').trim().toLowerCase();
+        const mLow = monthName.toLowerCase();
+        // Matches "November 2026" or legacy "November" when year is 2026
+        if (stored === `${mLow} ${yearStr}`) return true;
+        if (yearStr === '2026' && stored === mLow) return true;
+        return false;
+      });
+    }
+
+    // --- RENDER PARENT PROFILE WITH MARKS, TOTAL, RANK & YEARLY FEE STATUS ---
     async function renderParentProfile(students, phone) {
       const container = document.getElementById('parent-student-cards');
       const foodCard = document.getElementById('parent-food-card');
       const foodDetails = document.getElementById('parent-food-details');
+      const selectedYear = document.getElementById('parent-fee-year')?.value || '2026';
 
       container.innerHTML = '<p class="text-xs text-gray-500">Loading student details...</p>';
       foodCard.classList.add('hidden');
 
-      // റാങ്ക് കണക്കാക്കാൻ ക്ലാസ്സിലെ എല്ലാ കുട്ടികളുടെയും മാർക്കുകൾ എടുക്കുന്നു
       const { data: allStudents } = await db.from('students').select('id, class');
       const { data: allMarks } = await db.from('exam_marks').select('student_id, exam_name, marks_obtained, subjects(subject_name, max_marks)');
 
@@ -745,11 +878,38 @@
         const presentDays = att ? att.filter(a => a.status === 'present').length : 0;
         const percentage = totalDays > 0 ? Math.round((presentDays / totalDays) * 100) : 0;
 
-        // Fees
-        const { data: fees } = await db.from('fee_payments').select('*').eq('student_id', stu.id).order('id', { ascending: false });
-        let feeHtml = fees && fees.length > 0 
-          ? fees.map(f => `<span class="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 font-bold mr-1">${f.month}: ₹${f.amount}</span>`).join(' ')
-          : '<span class="text-xs text-gray-400">ഫീസ് വിവരങ്ങൾ ലഭ്യമല്ല</span>';
+        // Fees for Selected Year (Green = Paid, Red = Pending)
+        const { data: fees } = await db.from('fee_payments').select('*').eq('student_id', stu.id);
+        const monthlyFee = Number(stu.monthly_fee) || 0;
+        let pendingMonthsCount = 0;
+        let monthBadgesHtml = '<div class="grid grid-cols-4 gap-1 mt-1">';
+
+        ALL_MONTHS.forEach(m => {
+          const paidRec = isFeePaidForMonth(fees, m, selectedYear);
+          if (paidRec) {
+            monthBadgesHtml += `
+              <div class="bg-emerald-600 text-white text-[10px] px-1.5 py-1 text-center font-bold">
+                ${SHORT_MONTHS[m]} ✓
+              </div>`;
+          } else {
+            pendingMonthsCount++;
+            monthBadgesHtml += `
+              <div class="bg-rose-100 border border-rose-300 text-rose-800 text-[10px] px-1.5 py-1 text-center font-bold">
+                ${SHORT_MONTHS[m]} (Pending)
+              </div>`;
+          }
+        });
+        monthBadgesHtml += '</div>';
+
+        const pendingRupees = pendingMonthsCount * monthlyFee;
+        const feeSummaryText = monthlyFee > 0 
+          ? `<div class="mt-1.5 p-2 bg-gray-50 border border-gray-200 flex justify-between text-[11px]">
+              <span>പ്രതിമാസ ഫീസ്: <b>₹${monthlyFee}</b></span>
+              <span class="${pendingRupees > 0 ? 'text-rose-700 font-extrabold' : 'text-emerald-700 font-extrabold'}">
+                ${pendingRupees > 0 ? `ബാക്കി (${pendingMonthsCount} മാസം): ₹${pendingRupees}` : 'എല്ലാ മാസവും അടച്ചു ✓'}
+              </span>
+             </div>`
+          : '';
 
         // Exam Marks grouped by Exam Name with Total & Rank
         const stuMarks = (allMarks || []).filter(m => m.student_id === stu.id);
@@ -779,7 +939,6 @@
                 </div>`;
             });
 
-            // ക്ലാസ്സിലെ റാങ്ക് കണക്കാക്കുന്നു
             const classTotals = classmates.map(cm => {
               const cmMarks = (allMarks || []).filter(m => m.student_id === cm.id && m.exam_name === examName);
               const sum = cmMarks.reduce((acc, cur) => acc + Number(cur.marks_obtained), 0);
@@ -789,7 +948,6 @@
             let rankDisplay = '-';
             const myIndex = classTotals.findIndex(x => x.id === stu.id);
             if (myIndex !== -1) {
-              // തുല്യ മാർക്കാണെങ്കിൽ ഒരേ റാങ്ക് നൽകുന്നു
               const myTotal = classTotals[myIndex].total;
               const rankNum = classTotals.findIndex(x => x.total === myTotal) + 1;
               rankDisplay = `#${rankNum}`;
@@ -824,8 +982,9 @@
               <p><b>ഹാജർ നില:</b> ${presentDays} / ${totalDays} ദിവസങ്ങൾ (<span class="font-bold text-emerald-700">${percentage}%</span>)</p>
               <div class="pt-1"><b>പരീക്ഷാ ഫലം (Marks & Rank):</b></div>
               ${marksHtml}
-              <div class="pt-1"><b>ഫീസ് അടവ് വിവരങ്ങൾ:</b></div>
-              <div class="flex flex-wrap gap-1">${feeHtml}</div>
+              <div class="pt-2 border-t"><b>ഫീസ് വിവരങ്ങൾ (${selectedYear}):</b></div>
+              ${feeSummaryText}
+              ${monthBadgesHtml}
             </div>
           </div>
         `;
@@ -909,7 +1068,7 @@
       if(tabId === 'students-dir') loadStudentsDirectory();
       if(tabId === 'dashboard') loadDashboardStats();
       if(tabId === 'teachers') loadTeachers();
-      if(tabId === 'fees') { loadStudentsListCache(); loadFees(); }
+      if(tabId === 'fees') loadFeesTab();
       if(tabId === 'roles') loadStaffRoles();
     }
 
@@ -1018,10 +1177,8 @@
         return;
       }
 
-      // ആകെ പരമാവധി മാർക്ക് കണക്കാക്കുന്നു
       const totalMaxPossible = subjects.reduce((sum, sub) => sum + Number(sub.max_marks), 0);
 
-      // ടേബിൾ ഹെഡർ (ID, Name, Subjects, Total, Rank)
       let headHTML = `<tr><th class="p-2.5 border-r w-12 text-center">ID</th><th class="p-2.5 border-r">Student Name</th>`;
       subjects.forEach(sub => {
         headHTML += `<th class="p-2.5 border-r text-center bg-blue-50 text-blue-900">${sub.subject_name} <span class="text-[10px] text-gray-500 font-normal">/${sub.max_marks}</span></th>`;
@@ -1055,16 +1212,13 @@
         tbody.innerHTML += rowHTML;
       });
 
-      // പേജ് ലോഡ് ആകുമ്പോൾ തന്നെ Total-ഉം Rank-ഉം കണക്കാക്കുന്നു
       recalculateTotalsAndRanks();
     }
 
-    // മാർക്ക് ടൈപ്പ് ചെയ്യുമ്പോൾ Max Marks പരിശോധിക്കുകയും Live Total & Rank അപ്‌ഡേറ്റ് ചെയ്യുകയും ചെയ്യുന്നു
     function handleMarkInput(inputEl) {
       const maxAllowed = Number(inputEl.dataset.max);
       let rawVal = inputEl.value;
 
-      // അക്കങ്ങളും ദശാംശബിന്ദുവും മാത്രമേ അനുവദിക്കൂ
       rawVal = rawVal.replace(/[^0-9.]/g, '');
       inputEl.value = rawVal;
 
@@ -1079,7 +1233,6 @@
       recalculateTotalsAndRanks();
     }
 
-    // എല്ലാ കുട്ടികളുടെയും Total കൂട്ടി തത്സമയം Rank നിശ്ചയിക്കുന്ന ഫംഗ്ഷൻ
     function recalculateTotalsAndRanks() {
       const rows = document.querySelectorAll('tr[data-student-row]');
       const studentScores = [];
@@ -1103,7 +1256,6 @@
         studentScores.push({ stuId, sum, hasAnyMark });
       });
 
-      // മാർക്ക് എന്റർ ചെയ്ത കുട്ടികളെ കൂടുതൽ മാർക്ക് മുതൽ കുറഞ്ഞതിലേക്ക് ക്രമീകരിക്കുന്നു
       const rankedList = studentScores
         .filter(s => s.hasAnyMark)
         .sort((a, b) => b.sum - a.sum);
@@ -1115,7 +1267,6 @@
         if (!s.hasAnyMark) {
           rankCell.innerText = '-';
         } else {
-          // തുല്യ മാർക്കുള്ളവർക്ക് ഒരേ റാങ്ക് നൽകുന്നു
           const rankIndex = rankedList.findIndex(item => item.sum === s.sum);
           rankCell.innerText = `#${rankIndex + 1}`;
         }
@@ -1203,14 +1354,12 @@
       await handleAttClassChange();
     }
 
-    // ക്ലാസ് തിരഞ്ഞെടുക്കുമ്പോൾ ഹാജർ രേഖപ്പെടുത്തിയിട്ടില്ലെങ്കിൽ തനിയെ All-Tick (Present) ആക്കുന്നു
     async function handleAttClassChange() {
       const selectedClass = document.getElementById('att-class-filter').value;
       const filteredStudents = selectedClass === 'all' 
         ? cachedStudents 
         : cachedStudents.filter(s => String(s.class) === String(selectedClass));
 
-      // ഇതുവരെ ഇന്നത്തെ ഹാജർ മാർക്ക് ചെയ്യാത്ത കുട്ടികളെ കണ്ടെത്തുന്നു
       const unmarkedStudents = filteredStudents.filter(s => currentAttMap[s.id] === undefined);
 
       if (unmarkedStudents.length > 0) {
@@ -1299,7 +1448,6 @@
       }
     }
 
-    // മുകളിലുള്ള ALL TICK ചെക്ക്ബോക്സ് ക്ലിക്ക് ചെയ്യുമ്പോൾ എല്ലാവരെയും Present അല്ലെങ്കിൽ Absent ആക്കുന്നു
     async function toggleAllStudentsAttendance(isChecked) {
       const selectedClass = document.getElementById('att-class-filter').value;
       const targetStudents = selectedClass === 'all' 
@@ -1354,7 +1502,7 @@
       tbody.innerHTML = '';
 
       if(cachedStudents.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">കുട്ടികളെ ചേർത്തിട്ടില്ല.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-gray-500">കുട്ടികളെ ചേർത്തിട്ടില്ല.</td></tr>`;
         return;
       }
 
@@ -1365,6 +1513,7 @@
             <td class="p-2.5 border-r font-medium">${s.name}</td>
             <td class="p-2.5 border-r">${s.class}</td>
             <td class="p-2.5 border-r font-mono">${s.phone}</td>
+            <td class="p-2.5 border-r font-mono font-bold text-emerald-700">₹${s.monthly_fee || 0}</td>
             <td class="p-2.5 text-center">
               <button onclick="openStudentEditModal(${s.id})" class="text-blue-600 font-bold hover:underline text-xs">Edit / Delete</button>
             </td>
@@ -1411,6 +1560,7 @@
       document.getElementById('edit-stu-name').value = s.name;
       document.getElementById('edit-stu-class').value = s.class;
       document.getElementById('edit-stu-phone').value = s.phone;
+      document.getElementById('edit-stu-fee').value = s.monthly_fee || 0;
       document.getElementById('student-edit-modal').classList.remove('hidden');
       document.getElementById('student-edit-modal').classList.add('flex');
     }
@@ -1426,7 +1576,8 @@
       const { error } = await db.from('students').update({
         name: document.getElementById('edit-stu-name').value,
         class: document.getElementById('edit-stu-class').value,
-        phone: document.getElementById('edit-stu-phone').value
+        phone: document.getElementById('edit-stu-phone').value,
+        monthly_fee: Number(document.getElementById('edit-stu-fee').value) || 0
       }).eq('id', id);
 
       if(error) alert("Error: " + error.message);
@@ -1593,7 +1744,7 @@
       }
     }
 
-    // --- TEACHERS & FEES ---
+    // --- TEACHERS ---
     async function loadTeachers() {
       const { data } = await db.from('teachers').select('*').order('id', { ascending: false });
       const tbody = document.getElementById('teachers-table-body');
@@ -1627,47 +1778,187 @@
       }
     }
 
+    // ==========================================
+    // FEE MANAGEMENT (YEARLY MATRIX, PAID GREEN / PENDING RED)
+    // ==========================================
+    async function loadFeesTab() {
+      await loadStudentsListCache();
+      const classFilter = document.getElementById('fee-filter-class');
+      if (classFilter) {
+        const uniqueClasses = [...new Set(cachedStudents.map(s => s.class))].filter(Boolean).sort();
+        const prevClass = classFilter.value;
+        classFilter.innerHTML = '<option value="all">All Classes</option>';
+        uniqueClasses.forEach(c => {
+          classFilter.innerHTML += `<option value="${c}">Class ${c}</option>`;
+        });
+        if (prevClass) classFilter.value = prevClass;
+      }
+      await loadFees();
+    }
+
     async function loadFees() {
-      const { data } = await db.from('fee_payments').select('*, students(name, phone)').order('id', { ascending: false });
+      const { data } = await db.from('fee_payments').select('*, students(name, phone, class)').order('id', { ascending: false });
+      cachedFeePayments = data || [];
+      
       const tbody = document.getElementById('fees-table-body');
-      if(!tbody) return;
+      if(tbody) {
+        tbody.innerHTML = '';
+        cachedFeePayments.forEach(f => {
+          const studentName = f.students ? f.students.name : 'Unknown';
+          const phone = f.students ? f.students.phone : '';
+          tbody.innerHTML += `
+            <tr class="border-b hover:bg-gray-50">
+              <td class="p-2 border-r font-medium">${studentName}</td>
+              <td class="p-2 border-r font-bold text-slate-700">${f.month}</td>
+              <td class="p-2 border-r font-mono font-bold text-emerald-700">₹${f.amount}</td>
+              <td class="p-2 text-center">
+                <button onclick="sendFeeReceiptMalayalam('${phone}', '${studentName}', '${f.month}', '${f.amount}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-0.5 text-[10px] font-bold">WhatsApp</button>
+              </td>
+            </tr>
+          `;
+        });
+      }
+
+      renderFeeMatrix();
+    }
+
+    function renderFeeMatrix() {
+      const tbody = document.getElementById('fee-matrix-body');
+      if (!tbody) return;
+
+      const selectedYear = document.getElementById('fee-filter-year').value;
+      const selectedClass = document.getElementById('fee-filter-class').value;
+      const selectedMonthFilter = document.getElementById('fee-filter-month').value;
+
+      const monthsToDisplay = selectedMonthFilter === 'all' ? ALL_MONTHS : [selectedMonthFilter];
+      const studentsToShow = selectedClass === 'all' 
+        ? cachedStudents 
+        : cachedStudents.filter(s => String(s.class) === String(selectedClass));
+
       tbody.innerHTML = '';
-      (data || []).forEach(f => {
-        const studentName = f.students ? f.students.name : 'Unknown';
-        const phone = f.students ? f.students.phone : '';
+      if (studentsToShow.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">വിദ്യാർത്ഥികളെ കണ്ടെത്തിയില്ല.</td></tr>`;
+        return;
+      }
+
+      let totalCollectedYear = 0;
+      let totalPendingYear = 0;
+      let studentsWithPending = 0;
+
+      studentsToShow.sort((a, b) => a.name.localeCompare(b.name)).forEach(stu => {
+        const stuFees = cachedFeePayments.filter(f => f.student_id === stu.id);
+        const monthlyFee = Number(stu.monthly_fee) || 0;
+
+        let pendingCount = 0;
+        let pendingMonthsNames = [];
+        let pillsHtml = '<div class="flex flex-wrap gap-1">';
+
+        monthsToDisplay.forEach(m => {
+          const paidRec = isFeePaidForMonth(stuFees, m, selectedYear);
+          if (paidRec) {
+            totalCollectedYear += Number(paidRec.amount) || monthlyFee;
+            pillsHtml += `
+              <span title="Paid ₹${paidRec.amount} on ${paidRec.payment_date || ''}" 
+                class="bg-emerald-600 text-white px-2 py-0.5 text-[10px] font-bold inline-flex items-center gap-0.5">
+                ${SHORT_MONTHS[m]} ✓
+              </span>`;
+          } else {
+            pendingCount++;
+            pendingMonthsNames.push(m);
+            pillsHtml += `
+              <button type="button" 
+                onclick="quickFillFeeForm(${stu.id}, '${m}', '${selectedYear}', ${monthlyFee})"
+                title="ക്ലിക്ക് ചെയ്ത് ${m} ${selectedYear} ഫീസ് അടയ്ക്കുക"
+                class="bg-rose-100 hover:bg-rose-600 hover:text-white border border-rose-300 text-rose-800 px-2 py-0.5 text-[10px] font-bold cursor-pointer transition-colors">
+                ${SHORT_MONTHS[m]}
+              </button>`;
+          }
+        });
+
+        pillsHtml += '</div>';
+
+        const stuPendingAmount = pendingCount * monthlyFee;
+        totalPendingYear += stuPendingAmount;
+        if (pendingCount > 0 && monthlyFee > 0) studentsWithPending++;
+
+        const pendingBadge = monthlyFee === 0
+          ? `<span class="text-[10px] text-gray-400">Fee not set</span>`
+          : (stuPendingAmount > 0 
+              ? `<span class="text-rose-700 font-extrabold font-mono">₹${stuPendingAmount}</span> <span class="text-[10px] text-gray-500">(${pendingCount}m)</span>`
+              : `<span class="text-emerald-700 font-bold text-[11px]">Cleared ✓</span>`);
+
+        const reminderBtn = (stuPendingAmount > 0 && stu.phone)
+          ? `<button onclick="sendPendingFeeReminder('${stu.phone}', '${stu.name}', '${selectedYear}', '${pendingMonthsNames.join(', ')}', ${stuPendingAmount})" class="bg-amber-600 hover:bg-amber-700 text-white px-2 py-1 text-[10px] font-bold">Remind</button>`
+          : `<span class="text-gray-300 text-[10px]">-</span>`;
+
         tbody.innerHTML += `
-          <tr class="border-b">
-            <td class="p-2 border-r">${studentName}</td>
-            <td class="p-2 border-r">${f.month}</td>
-            <td class="p-2 border-r font-mono font-bold">₹${f.amount}</td>
-            <td class="p-2 text-center">
-              <button onclick="sendFeeReceiptMalayalam('${phone}', '${studentName}', '${f.month}', '${f.amount}')" class="bg-blue-600 text-white px-2 py-0.5 text-[10px] font-bold">WhatsApp</button>
+          <tr class="border-b hover:bg-gray-50">
+            <td class="p-2.5 border-r">
+              <div class="font-bold text-gray-900">${stu.name}</div>
+              <div class="text-[10px] text-gray-500">Class ${stu.class} • ID #${stu.id}</div>
             </td>
+            <td class="p-2.5 border-r text-center font-mono font-bold text-gray-700">₹${monthlyFee}</td>
+            <td class="p-2.5 border-r">${pillsHtml}</td>
+            <td class="p-2.5 border-r text-right">${pendingBadge}</td>
+            <td class="p-2.5 text-center">${reminderBtn}</td>
           </tr>
         `;
       });
+
+      document.getElementById('fee-total-collected').innerText = `₹${totalCollectedYear}`;
+      document.getElementById('fee-total-pending').innerText = `₹${totalPendingYear}`;
+      document.getElementById('fee-pending-students-count').innerText = `${studentsWithPending} / ${studentsToShow.length}`;
+    }
+
+    // ചുവപ്പ് ബട്ടണിൽ ക്ലിക്ക് ചെയ്യുമ്പോൾ മുകളിലെ ഫീസ് ഫോം തനിയെ പൂരിപ്പിക്കുന്നു
+    function quickFillFeeForm(studentId, monthName, yearStr, amount) {
+      document.getElementById('fee-student-select').value = studentId;
+      document.getElementById('fee-form-year').value = yearStr;
+      document.getElementById('fee-month').value = monthName;
+      document.getElementById('fee-amount').value = amount;
+      document.getElementById('fee-record-box').scrollIntoView({ behavior: 'smooth' });
     }
 
     async function addFeePayment(e) {
       if (e) e.preventDefault();
+      const studentId = document.getElementById('fee-student-select').value;
+      const monthName = document.getElementById('fee-month').value;
+      const yearStr = document.getElementById('fee-form-year').value;
+      const amount = document.getElementById('fee-amount').value;
+      const fullMonthLabel = `${monthName} ${yearStr}`;
+
+      // ഒരേ മാസം വീണ്ടും രേഖപ്പെടുത്തുന്നത് തടയുന്നു
+      const alreadyPaid = cachedFeePayments.find(f => 
+        String(f.student_id) === String(studentId) && 
+        String(f.month).toLowerCase() === fullMonthLabel.toLowerCase()
+      );
+      if (alreadyPaid) {
+        alert(`${fullMonthLabel}-ലെ ഫീസ് ഈ കുട്ടിക്ക് ഇതിനകം രേഖപ്പെടുത്തിയിട്ടുണ്ട്!`);
+        return;
+      }
+
       const { error } = await db.from('fee_payments').insert([{
-        student_id: document.getElementById('fee-student-select').value,
-        month: document.getElementById('fee-month').value,
-        amount: document.getElementById('fee-amount').value,
+        student_id: studentId,
+        month: fullMonthLabel,
+        amount: amount,
         status: 'paid',
         payment_date: new Date().toISOString().split('T')[0]
       }]);
       if(error) alert(error.message);
       else { 
-        alert("Fee recorded!"); 
-        document.getElementById('fee-month').value = '';
-        document.getElementById('fee-amount').value = '';
+        alert(`${fullMonthLabel} ഫീസ് വിജയകരമായി രേഖപ്പെടുത്തി!`); 
+        document.getElementById('fee-filter-year').value = yearStr;
         loadFees(); 
       }
     }
 
     function sendFeeReceiptMalayalam(phone, name, month, amount) {
       const msg = encodeURIComponent(`അസ്സലാമു അലൈകും,\nവിദ്യാർത്ഥി ${name}-ന്റെ ${month} മാസത്തെ മദ്റസ ഫീസ് (₹${amount}) ലഭിച്ചിരിക്കുന്നു. നന്ദി.`);
+      window.open(`https://wa.me/91${phone}?text=${msg}`, '_blank');
+    }
+
+    function sendPendingFeeReminder(phone, name, year, pendingMonths, totalDue) {
+      const msg = encodeURIComponent(`അസ്സലാമു അലൈകും,\nവിദ്യാർത്ഥി ${name}-ന്റെ ${year} വർഷത്തിലെ (${pendingMonths}) മാസങ്ങളിലെ മദ്റസ ഫീസ് (ആകെ ₹${totalDue}) അടയ്ക്കാൻ ബാക്കിയുണ്ട് എന്ന് ഓർമ്മിപ്പിക്കുന്നു.\n\n- മദ്റസ മാനേജ്‌മെന്റ്`);
       window.open(`https://wa.me/91${phone}?text=${msg}`, '_blank');
     }
 
